@@ -1,0 +1,53 @@
+브랜드 자산 이용 고지 (Brand Asset Notice)
+=========================================
+
+이 저장소의 소스 코드와 문서는 MIT 라이선스(LICENSE 파일)를 따릅니다.
+다만 아래 파일들은 **한국일보의 상표 및 저작물**이며, MIT 라이선스 적용
+대상이 아닙니다.
+
+    plugins/hankookilbo-slides/skills/hankookilbo-slides/assets/
+      ├── hankookilbo-template.pptx    한국일보 공식 슬라이드 템플릿
+      ├── logo-corner.png              한국일보 로고 (본문 장표용)
+      ├── logo-vertical.png            한국일보 로고 (표지용)
+      └── cover-b-artwork.png          표지 B 하단 아트워크
+
+또한 각 스킬 문서에 기술된 색상 값·타이포그래피·레이아웃 규격은 한국일보의
+공식 디자인 시스템을 문서화한 것입니다.
+
+
+허용되는 사용
+------------
+
+- 이 플러그인을 설치해 **한국일보 업무 목적의 문서**를 만드는 데 사용
+- 스킬 코드·문서 구조를 참고해 **자체 조직의 서식 플러그인**을 만드는 데 활용
+  (이때 위 브랜드 자산 파일은 반드시 자체 자산으로 교체해야 합니다)
+
+
+허용되지 않는 사용
+----------------
+
+- 로고·템플릿·아트워크를 한국일보와 무관한 문서나 제품에 사용
+- 한국일보가 발행·승인한 것으로 오인될 수 있는 자료 제작
+- 브랜드 자산 파일을 별도로 재배포하거나 2차 저작물의 일부로 배포
+
+
+문의
+----
+
+브랜드 자산 사용 승인이 필요하면 한국일보로 문의하세요.
+https://github.com/hkilbo/claude-plugins/issues
+
+
+---
+
+English summary
+---------------
+
+Source code and documentation in this repository are MIT licensed (see
+LICENSE). The template file, logo images, and cover artwork listed above are
+trademarks and copyrighted works of Hankookilbo and are NOT covered by the MIT
+license. You may use them to produce Hankookilbo work documents, and you may
+reuse the surrounding skill code as a starting point for your own
+organization's format plugin — but you must replace those brand asset files
+with your own. Redistributing the brand assets, or using them in a way that
+implies Hankookilbo authorship or endorsement, is not permitted.

@@ -1,0 +1,30 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "hankookilbo",
+  "description": "한국일보 공개 Claude Code 플러그인 마켓플레이스. 문서 서식·업무 자동화 스킬을 플러그인 단위로 골라 설치할 수 있습니다.",
+  "owner": {
+    "name": "한국일보",
+    "url": "https://github.com/hkilbo"
+  },
+  "plugins": [
+    {
+      "name": "hankookilbo-slides",
+      "description": "한국일보 공식 슬라이드 서식으로 보고 자료를 만들고, 기존 문서를 공식 서식으로 바꾸고, 서식 준수 여부를 점검합니다. 템플릿 파일과 로고가 함께 들어 있어 별도 준비 없이 바로 쓸 수 있습니다.",
+      "version": "0.3.1",
+      "source": "./plugins/hankookilbo-slides",
+      "author": {
+        "name": "한규민"
+      },
+      "category": "productivity",
+      "keywords": [
+        "한국일보",
+        "슬라이드",
+        "프리젠테이션",
+        "디자인시스템",
+        "pptx",
+        "보고서식"
+      ],
+      "homepage": "https://github.com/hkilbo/claude-plugins/tree/main/plugins/hankookilbo-slides"
+    }
+  ]
+}

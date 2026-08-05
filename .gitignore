@@ -1,0 +1,18 @@
+# Claude Code 로컬 설정 (개인 PC 경로·권한이 들어감)
+.claude/settings.local.json
+
+# OMC 운영 상태 (커밋 대상 아님)
+.omc/
+
+# 빌드 산출물 — 플러그인은 소스 그대로 배포합니다
+*.plugin
+*.zip
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 에디터
+.idea/
+.vscode/
+*.swp
