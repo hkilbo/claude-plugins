@@ -2,13 +2,10 @@
 # HERB(인터랙티브 > Claude 스킬)가 이 경로를 읽어 목록·SKILL.md 보기·다운로드를 보여 준다.
 #
 # - 실행: 수동(workflow_dispatch). 게시 = 라이브이므로 실행 시점을 사람이 정한다.
-# - 인증: GitHub OIDC → AWS 역할 (hk-frontend reusable-s3-mutable-publish, 장기 키 없음)
+# - 인증: GitHub OIDC → AWS 역할. 장기 키 없음.
 # - 롤백: 되돌릴 커밋을 ref 로 골라 같은 워크플로를 다시 실행한다 (산출물은 커밋에서 재생성).
 # - 역할 ARN·버킷·배포 ID 는 코드에 적지 않는다 — 저장소 Variables AWS_ROLE_ARN_PRD / ASSETS_BUCKET_PRD /
-#   ASSETS_DISTRIBUTION_PRD 에서 읽는다 (공개 저장소). 역할·정책: CONTRIBUTING.md 「CDN 업로드」
-# prd 는 불변 태그(@v1.x.x)를 참조한다. IAM 신뢰 조건(job_workflow_ref …@refs/tags/v1.*)이
-# 이동 태그 실행을 거부한다.
-# 공통 워크플로를 올릴 때는 이 태그 번호만 바꾼다.
+#
 name: Publish claude-plugins prd
 
 on:
@@ -22,28 +19,110 @@ concurrency:
   group: publish-claude-plugins-prd
   cancel-in-progress: false
 
+env:
+  STAGE: prd
+  SOURCE_DIR: build/claude-plugins
+  S3_PREFIX: claude-plugins
+
 jobs:
   publish:
-    uses: hkilbo/hk-frontend/.github/workflows/reusable-s3-mutable-publish.yml@v1.4.1
-    with:
-      # GitHub Environment 는 쓰지 않는다 — 역할 신뢰 정책이 sub(…:ref:refs/heads/main)으로 main 실행만 허용한다.
-      aws-role-to-assume: ${{ vars.AWS_ROLE_ARN_PRD }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: 저장소 변수 확인
+        env:
+          AWS_ROLE: ${{ vars.AWS_ROLE_ARN_PRD }}
+          BUCKET: ${{ vars.ASSETS_BUCKET_PRD }}
+          DIST_ID: ${{ vars.ASSETS_DISTRIBUTION_PRD }}
+        run: |
+          set -euo pipefail
+          for v in AWS_ROLE BUCKET DIST_ID; do
+            [ -n "${!v}" ] || { echo "::error::저장소 Variables 에 AWS_ROLE_ARN_PRD / ASSETS_BUCKET_PRD / ASSETS_DISTRIBUTION_PRD 가 모두 있어야 합니다 (${v} 비어 있음)."; exit 1; }
+          done
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      # 자격증명 발급 전에 실행한다 — 저장소 스크립트가 AWS 자격증명이 담긴 환경에서 돌지 않게.
       # build-assets.mjs 는 node 표준 라이브러리 + zip 명령만 쓴다 — 의존성 설치 불필요
-      package-manager: none
-      # 자격증명 발급 전에 실행된다 — AWS API 를 호출하지 않는 순수 생성
-      prepare-command: node scripts/build-assets.mjs --out build/claude-plugins
-      source-dir: build/claude-plugins
-      deployment-name: claude-plugins
-      s3-bucket: ${{ vars.ASSETS_BUCKET_PRD }}
-      s3-prefix: claude-plugins
-      # zip·SKILL.md 먼저, 목록(index.json)은 마지막 — 목록이 아직 없는 파일을 가리키는 순간을 없앤다.
-      # sync-delete 는 각 패턴 안에서만 동작한다: 마켓플레이스에서 뺀 플러그인의 zip·SKILL.md 가 지워진다.
-      upload-rules: |
-        [
-          { "pattern": "*.zip", "cache-control": "max-age=300", "sync-delete": true, "content-type": "application/zip" },
-          { "pattern": "*/SKILL.md", "cache-control": "max-age=300", "sync-delete": true, "content-type": "text/markdown; charset=utf-8" },
-          { "pattern": "index.json", "cache-control": "max-age=300", "content-type": "application/json; charset=utf-8" }
-        ]
-      cloudfront-distribution-id: ${{ vars.ASSETS_DISTRIBUTION_PRD }}
-      cloudfront-path-whitelist: |
-        /claude-plugins/*
+      - name: 목록·zip 생성
+        run: node scripts/build-assets.mjs --out "$SOURCE_DIR"
+
+      - name: 산출물 확인
+        run: |
+          set -euo pipefail
+          [ -d "$SOURCE_DIR" ] && [ -n "$(ls -A "$SOURCE_DIR")" ] \
+            || { echo "::error::${SOURCE_DIR} 가 비어 있습니다. build-assets.mjs 를 확인하세요."; exit 1; }
+          echo "::group::업로드 대상 (${SOURCE_DIR})"
+          find "$SOURCE_DIR" -type f | sed "s|^$SOURCE_DIR/||" | sort
+          echo "::endgroup::"
+          echo "FILE_COUNT=$(find "$SOURCE_DIR" -type f | wc -l | tr -d ' ')" >> "$GITHUB_ENV"
+
+      # AssumeRole 이 거부되면 신뢰 정책과 대조할 수 있게 클레임을 남긴다. 토큰은 출력하지 않는다.
+      - name: OIDC 클레임 기록
+        run: |
+          python3 - <<'PY'
+          import base64, json, os, urllib.parse, urllib.request
+          url = os.environ["ACTIONS_ID_TOKEN_REQUEST_URL"] + "&audience=" + urllib.parse.quote("sts.amazonaws.com")
+          req = urllib.request.Request(url, headers={"Authorization": "bearer " + os.environ["ACTIONS_ID_TOKEN_REQUEST_TOKEN"]})
+          token = json.load(urllib.request.urlopen(req))["value"]
+          payload = token.split(".")[1]
+          claims = json.loads(base64.urlsafe_b64decode(payload + "=" * (-len(payload) % 4)))
+          lines = ["### OIDC claims (pre-assume)", "", "| claim | value |", "|---|---|"]
+          for k in ["aud", "sub", "repository", "ref", "job_workflow_ref", "workflow_ref"]:
+              lines.append(f"| `{k}` | `{claims.get(k, '(없음)')}` |")
+          report = "\n".join(lines)
+          print(report)
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as f:
+              f.write(report + "\n")
+          PY
+
+      - uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN_PRD }}
+          aws-region: ap-northeast-2
+
+      # 규칙 순서대로 sync 한다. zip·SKILL.md 먼저, 목록(index.json)은 마지막 — 목록이 아직 없는 파일을 가리키는 순간을 없앤다.
+      # --delete 는 그 규칙의 패턴 안에서만 동작한다: 마켓플레이스에서 뺀 플러그인의 zip·SKILL.md 가 지워지고, 패턴 밖 객체는 건드리지 않는다.
+      - name: S3 업로드
+        env:
+          BUCKET: ${{ vars.ASSETS_BUCKET_PRD }}
+        run: |
+          set -euo pipefail
+          DEST="s3://${BUCKET}/${S3_PREFIX}"
+          sync() { # <pattern> <cache-control> <content-type> [--delete]
+            local pattern=$1 cache=$2 type=$3; shift 3
+            echo "::group::${pattern} -> ${DEST} (cache: ${cache}, type: ${type}${1:+, 고아 삭제})"
+            aws s3 sync "$SOURCE_DIR" "$DEST" --exclude "*" --include "$pattern" \
+              --cache-control "$cache" --content-type "$type" "$@"
+            echo "::endgroup::"
+          }
+          sync "*.zip"       "max-age=300" "application/zip"                --delete
+          sync "*/SKILL.md"  "max-age=300" "text/markdown; charset=utf-8"   --delete
+          sync "index.json"  "max-age=300" "application/json; charset=utf-8"
+
+      # 모든 업로드가 끝난 뒤 한 번만 무효화한다.
+      - name: CloudFront 갱신
+        env:
+          DIST_ID: ${{ vars.ASSETS_DISTRIBUTION_PRD }}
+        run: |
+          set -euo pipefail
+          INVALIDATION_ID=$(aws cloudfront create-invalidation --distribution-id "$DIST_ID" \
+            --paths "/${S3_PREFIX}/*" --query 'Invalidation.Id' --output text)
+          echo "CloudFront Invalidation Created: ${INVALIDATION_ID}"
+          echo "INVALIDATION_ID=${INVALIDATION_ID}" >> "$GITHUB_ENV"
+
+      - name: 요약
+        if: always()
+        run: |
+          {
+            echo "## 게시 결과 (claude-plugins ${STAGE})"
+            echo "- **버킷**: \`${{ vars.ASSETS_BUCKET_PRD }}\` / ${S3_PREFIX}"
+            echo "- **파일 수**: ${FILE_COUNT:-0}"
+            echo "- **commit**: \`${GITHUB_SHA::7}\` (\`${{ github.ref_name }}\`)"
+            echo "- **무효화**: ${INVALIDATION_ID:-스킵}"
+            echo "- **상태**: ${{ job.status }}"
+          } >> "$GITHUB_STEP_SUMMARY"
