@@ -12,7 +12,7 @@ description: 한국일보 인터랙티브 기사 페이지(스크롤 여정형, 
 
 - **기술/구조에 관한 모든 것의 단일 진실 공급원은 `references/hk-interactive-template.md`
   입니다.** 한국일보 개발부문이 만든 공식 문서이며, Astro+React 스택, 폴더 구조, `META.ts`,
-  인터랙티브 헤더(임베드 스크립트)/`Byline`, GA/GTM/카카오 SDK 등 필수 스크립트, 배포 규칙이
+  인터랙티브 헤더(임베드 스크립트)/`Byline`, GA4/카카오 SDK/한국일보 통계 등 필수 스크립트, 배포 규칙이
   전부 여기 정의돼 있습니다. **2단계(제작)를 시작하기 전에 이 문서 전체를 반드시
   읽으세요.** 이 스킬의 다른 어떤 설명보다 이 문서가 우선합니다.
 - **기획 인터뷰(1단계)에서 만드는 브리프(`brief.md`)는 "최초 기획 메모"일 뿐, 이후
@@ -22,7 +22,7 @@ description: 한국일보 인터랙티브 기사 페이지(스크롤 여정형, 
   입니다 (세부 내용은 `references/hk-interactive-template.md`, 특히 "0-1. 필수
   요건"과 "12. 규칙과 함정" 참고):
   1. `references/hk-interactive-template.md`의 "0-1. 필수 요건"에 있는 모든 항목
-     (GTM/GA/카카오SDK v2/한국일보 통계 스크립트, 인터랙티브 임베드, Byline, body-wrapper
+     (GA4 `G-HR08PM6YWZ` 하나/카카오SDK v2/한국일보 통계 `hkAnalTag_hub.js`, 인터랙티브 임베드, Byline, body-wrapper
      구조 등) — 절대 생략·삭제·ID변경 금지
   2. `npm run build` 산출물은 항상 `dist/` (astro.config.mjs의 `outDir` 변경 금지)
   3. 전체 산출물 용량 상한 (템플릿 권장 10MB / 스킬 상한 80MB)
@@ -175,9 +175,8 @@ node scripts/qa_playwright.js --entry ./dist/index.html --out ./qa-report --sect
 챕터 글이 가려져 찍히면 `--anchor-mobile 0.5`처럼 챕터 위쪽 끝이 놓일 화면 높이 비율(0~1)을
 지정해 다시 찍으세요 (PC는 `--anchor-desktop`, 둘 다 같으면 `--anchor`).
 
-`qa-report/`의 스크린샷을 직접 보고 레이아웃 문제를 먼저 스스로 고치세요. 콘솔 에러
-중 `/Inc/Js/hkFunc.js`·`hkAnalTag_hub.js` 404는 로컬에서는 정상입니다 (한국일보 서버
-전용 스크립트라 로컬에서 못 불러옴). 그 외 에러는 실제로 확인하세요.
+`qa-report/`의 스크린샷을 직접 보고 레이아웃 문제를 먼저 스스로 고치세요. 콘솔 에러는
+실제로 확인하세요.
 
 `report.json`의 `fonts`·`embed` 항목으로 웹폰트, 인터랙티브 임베드(헤더·추천
 카드)가 실제로 로드됐는지 확인하세요. 서체가

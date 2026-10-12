@@ -27,7 +27,7 @@ index.astro에 본문을 구성해줘.
 "0-1. 필수 요건"의 항목은 하나도 빠뜨리지 말고,
 12장 "규칙과 함정"을 반드시 지켜줘.
 마지막에 npm run build를 실행해서 dist/index.html에
-GTM-59599H7, UA-53476308-8, G-ZPZ8BHZPSJ, interactive-embed.js, byline이
+G-HR08PM6YWZ, hkAnalTag_hub.js, interactive-embed.js, byline이
 모두 들어 있는지 grep으로 검증해줘.
 ```
 
@@ -105,10 +105,9 @@ AI가 작업 중 반드시 지켜야 하는 최상위 규칙 3가지:
 
 | 구분                                            | 내용                                                                                        | 식별자                                                                                                                         |
 | ----------------------------------------------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| Google Tag Manager                              | GTM 컨테이너 로더 스니펫                                                                    | `GTM-59599H7`                                                                                                                  |
-| Google Analytics (UA)                           | gtag.js 2종                                                                                 | `UA-53476308-8`, `UA-53476308-1`                                                                                               |
-| Google Analytics (GA4)                          | gtag.js 3종                                                                                 | `G-ZPZ8BHZPSJ`, `G-HR08PM6YWZ`, `G-BZHTEE2B8L`                                                                                 |
-| 한국일보 통계                                   | `hkFunc.js`, `hkAnalTag_hub.js`                                                             | `/Inc/Js/hkFunc.js?ver=1.5`, `/Inc/Js/hkAnalTag_hub.js`                                                                        |
+| Google Analytics (GA4)                          | gtag.js 1종. 개편 전 스트림(GTM `GTM-59599H7`, UA `UA-53476308-*`, GA4 `G-ZPZ8BHZPSJ`·`G-BZHTEE2B8L`)은 넣지 않는다 | `G-HR08PM6YWZ`                                                                                                                 |
+| jQuery                                          | `hkAnalTag_hub.js`가 `$`를 쓴다. **통계 스크립트보다 앞에** 로드한다 (뒤에 두면 `$ is not defined`로 Hmap 수집이 안 된다) | `https://code.jquery.com/jquery-3.7.1.min.js`                                                                                  |
+| 한국일보 통계 (Hmap 1.0)                        | `hkAnalTag_hub.js` — www 절대 경로, jQuery 다음. `hkFunc.js`는 쓰지 않는다                   | `https://www.hankookilbo.com/Inc/Js/hkAnalTag_hub.js`                                                                          |
 | 한국일보 통계 메타                              | `hk:nw_newsid`, `hk:nw_press`, `hk:nw_presscode`, `hk:nw_title`, `hk:nw_pagecode`           | META.ts에서 주입                                                                                                               |
 | 인터랙티브 임베드 (헤더 웹컴포넌트 + 추천 카드) | `interactive-embed.js?Nid={ARTICLE_KEY}` + `data-scroll-container=".body-wrapper"` — 사내 CDN, `Nid`는 대문자 N | `https://assets.hankookilbo.com/components/interactive-embed/v1/interactive-embed.js`                                          |
 | 카카오 SDK **v2**                               | `t1.kakaocdn.net/kakao_js_sdk/2.7.6/kakao.min.js` + `Kakao.init(...)` (초기화 여부 확인 후) | 앱키 `e62df5186f0758def8f14c53e64d7b9d`. 인터랙티브 헤더가 같은 v2를 쓴다. v1(`developers.kakao.com/sdk/js/kakao.min.js`) 금지 |
@@ -163,15 +162,15 @@ AI가 작업 중 반드시 지켜야 하는 최상위 규칙 3가지:
 ```bash
 npm run build && \
 test -f dist/index.html && echo "OK dist/index.html" && \
-for key in GTM-59599H7 UA-53476308-8 UA-53476308-1 G-ZPZ8BHZPSJ G-HR08PM6YWZ G-BZHTEE2B8L \
-           hkFunc.js hkAnalTag_hub.js interactive-embed.js iconFont.css hk_fonts.css kakao.min.js \
+for key in G-HR08PM6YWZ code.jquery.com/jquery-3.7.1.min.js www.hankookilbo.com/Inc/Js/hkAnalTag_hub.js \
+           interactive-embed.js iconFont.css hk_fonts.css kakao.min.js \
            hk:nw_newsid hk:nw_pagecode og:image kakao_og_image twitter:card \
            byline body-wrapper full-loader data-scroll-container; do
   grep -q "$key" dist/index.html && echo "OK $key" || echo "MISSING $key"
 done
 ```
 
-추가로 `grep -q 'Copyright © Hankookilbo' dist/index.html`로 바이라인 저작권 문구를 확인한다. `MISSING`이 하나라도 출력되면 배포하지 않는다. `grep -c 'developers.kakao.com/sdk' dist/index.html`은 **0**이어야 한다 (카카오 SDK v1 금지). 추가로 `grep -o 'interactive-embed.js?Nid=[A-Z0-9]*' dist/index.html`의
+추가로 `grep -q 'Copyright © Hankookilbo' dist/index.html`로 바이라인 저작권 문구를 확인한다. `MISSING`이 하나라도 출력되면 배포하지 않는다. `grep -c 'developers.kakao.com/sdk' dist/index.html`은 **0**이어야 한다 (카카오 SDK v1 금지). `grep -cE 'GTM-59599H7|UA-53476308|G-ZPZ8BHZPSJ|G-BZHTEE2B8L|hkFunc\.js' dist/index.html`도 **0**이어야 한다 (개편 전 통계 스크립트 금지). 추가로 `grep -o 'interactive-embed.js?Nid=[A-Z0-9]*' dist/index.html`의
 값이 `META.ts`의 `ARTICLE_KEY`와 같은지 확인한다 (`A0000000000000000000`이면 미발급 상태).
 
 ---
@@ -522,35 +521,15 @@ import "../styles/style.sass";
       }
     </script>
 
-    <!-- Google Analytics (UA 2종 + GA4) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-53476308-8"></script>
-    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-53476308-1"></script>
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZPZ8BHZPSJ"></script>
+    <!-- Google tag (gtag.js) — GA4 G-HR08PM6YWZ 하나로 통일. 개편 전 스트림(GTM·UA·다른 G-*)은 넣지 않는다 -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-HR08PM6YWZ"></script>
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-BZHTEE2B8L"></script>
     <script is:inline>
       window.dataLayer = window.dataLayer || [];
       function gtag() {
         dataLayer.push(arguments);
       }
       gtag("js", new Date());
-      gtag("config", "UA-53476308-8");
-      gtag("config", "UA-53476308-1");
-      gtag("config", "G-ZPZ8BHZPSJ");
-    </script>
-
-    <!-- Google Tag Manager -->
-    <script is:inline>
-      (function (w, d, s, l, i) {
-        w[l] = w[l] || [];
-        w[l].push({ "gtm.start": new Date().getTime(), event: "gtm.js" });
-        var f = d.getElementsByTagName(s)[0],
-          j = d.createElement(s),
-          dl = l != "dataLayer" ? "&l=" + l : "";
-        j.async = true;
-        j.src = "https://www.googletagmanager.com/gtm.js?id=" + i + dl;
-        f.parentNode.insertBefore(j, f);
-      })(window, document, "script", "dataLayer", "GTM-59599H7");
+      gtag("config", "G-HR08PM6YWZ");
     </script>
 
     <!-- 한국일보 인터랙티브 임베드: 헤더 웹컴포넌트 + 추천 카드 (0-1장 참고). Nid는 대문자 N, 값은 META.ts의 ARTICLE_KEY -->
@@ -560,9 +539,10 @@ import "../styles/style.sass";
       data-scroll-container=".body-wrapper"
     ></script>
 
-    <!-- 한국일보 공통 함수 + 통계 -->
-    <script src="/Inc/Js/hkFunc.js?ver=1.5" charset="utf-8" is:inline></script>
-    <script src="/Inc/Js/hkAnalTag_hub.js" is:inline></script>
+    <!-- jQuery — 아래 통계 스크립트(hkAnalTag_hub.js)가 $ 를 쓴다. 반드시 통계 스크립트보다 앞 -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" is:inline></script>
+    <!-- 한국일보 통계 (Hmap 1.0) — www 절대 경로 -->
+    <script src="https://www.hankookilbo.com/Inc/Js/hkAnalTag_hub.js" is:inline></script>
   </head>
 
   <body class="loading">
@@ -601,7 +581,7 @@ import "../styles/style.sass";
 </html>
 ```
 
-`/Inc/Js/hkFunc.js`는 `interactive.hankookilbo.com` 서버에만 존재한다. 로컬 개발 중 이 파일의 404 콘솔 에러는 정상이며 배포 후 사라진다.
+통계 스크립트(`hkAnalTag_hub.js`)는 `www.hankookilbo.com` 절대 경로라 로컬에서도 로드된다. 콘솔에 404가 나면 경로를 확인한다. 콘솔에 `$ is not defined`가 나면 jQuery가 통계 스크립트 뒤에 있는 것이다 — 순서를 바꾼다 (`self_check.js`가 검사).
 
 ---
 
@@ -1483,10 +1463,9 @@ npm run preview
 ```
 --- 필수 요건 (0-1장) ---
 [ ] npm run build 산출물이 dist/ 에 생성됨 (dist/index.html 존재)
-[ ] dist/index.html 에 GTM-59599H7 포함
-[ ] dist/index.html 에 UA-53476308-8, UA-53476308-1 포함
-[ ] dist/index.html 에 G-ZPZ8BHZPSJ, G-HR08PM6YWZ, G-BZHTEE2B8L 포함
-[ ] dist/index.html 에 /Inc/Js/hkFunc.js, /Inc/Js/hkAnalTag_hub.js 포함
+[ ] dist/index.html 에 G-HR08PM6YWZ 포함, 개편 전 ID(GTM-59599H7, UA-53476308-*, G-ZPZ8BHZPSJ, G-BZHTEE2B8L) 없음
+[ ] dist/index.html 에 https://code.jquery.com/jquery-3.7.1.min.js 포함, hkAnalTag_hub.js 보다 앞
+[ ] dist/index.html 에 https://www.hankookilbo.com/Inc/Js/hkAnalTag_hub.js 포함 (hkFunc.js 없음)
 [ ] dist/index.html 에 hk:nw_* 메타 5종 포함
 [ ] dist/index.html 에 interactive-embed.js?Nid=<ARTICLE_KEY> 포함 (대문자 N, 값이 META.ts와 동일)
 [ ] 임베드 스크립트에 data-scroll-container=".body-wrapper" 포함 (헤더 숨김·추천 카드가 .body-wrapper 스크롤을 따라간다)

@@ -27,8 +27,6 @@
  * Astro 개발 서버(astro.config.mjs server.port)와 같은 origin이라 CDN·추천 카드 API
  * 허용 목록에 등록돼 있습니다. 개발 서버가 떠 있으면 포트가 겹치니 먼저 끄세요.
  *
- * 참고: `/Inc/Js/hkFunc.js` 등 사내망 전용 스크립트는 로컬에서 항상 404입니다.
- * 이 404 콘솔 에러는 로컬 QA에서는 정상이며 무시하세요 (hk-interactive-template.md 5장 참고).
  */
 
 const path = require("path");
@@ -364,7 +362,7 @@ async function main() {
     report.consoleErrors.forEach((e) => console.log("  - " + e));
   }
   if (report.failedRequests.length) {
-    console.log("\n실패한 네트워크 요청 (로컬에서는 /Inc/Js/*.js 404가 정상입니다):");
+    console.log("\n실패한 네트워크 요청:");
     report.failedRequests.forEach((r) => console.log(`  - [${r.viewport}] ${r.url} (${r.failure || ""})`));
   }
 }
