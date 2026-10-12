@@ -6,7 +6,7 @@
 # - 롤백: 되돌릴 커밋을 ref 로 골라 같은 워크플로를 다시 실행한다 (산출물은 커밋에서 재생성).
 # - 역할 ARN·버킷·배포 ID 는 코드에 적지 않는다 — 저장소 Variables AWS_ROLE_ARN_STG / ASSETS_BUCKET_STG /
 #
-name: Publish claude-plugins stg
+name: Publish Stg
 
 on:
   workflow_dispatch:
