@@ -106,7 +106,8 @@ AI가 작업 중 반드시 지켜야 하는 최상위 규칙 3가지:
 | 구분                                            | 내용                                                                                        | 식별자                                                                                                                         |
 | ----------------------------------------------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
 | Google Analytics (GA4)                          | gtag.js 1종. 개편 전 스트림(GTM `GTM-59599H7`, UA `UA-53476308-*`, GA4 `G-ZPZ8BHZPSJ`·`G-BZHTEE2B8L`)은 넣지 않는다 | `G-HR08PM6YWZ`                                                                                                                 |
-| 한국일보 통계 (Hmap 1.0)                        | `hkAnalTag_hub.js` — www 절대 경로. `hkFunc.js`는 쓰지 않는다                               | `https://www.hankookilbo.com/Inc/Js/hkAnalTag_hub.js`                                                                          |
+| jQuery                                          | `hkAnalTag_hub.js`가 `$`를 쓴다. **통계 스크립트보다 앞에** 로드한다 (뒤에 두면 `$ is not defined`로 Hmap 수집이 안 된다) | `https://code.jquery.com/jquery-3.7.1.min.js`                                                                                  |
+| 한국일보 통계 (Hmap 1.0)                        | `hkAnalTag_hub.js` — www 절대 경로, jQuery 다음. `hkFunc.js`는 쓰지 않는다                   | `https://www.hankookilbo.com/Inc/Js/hkAnalTag_hub.js`                                                                          |
 | 한국일보 통계 메타                              | `hk:nw_newsid`, `hk:nw_press`, `hk:nw_presscode`, `hk:nw_title`, `hk:nw_pagecode`           | META.ts에서 주입                                                                                                               |
 | 인터랙티브 임베드 (헤더 웹컴포넌트 + 추천 카드) | `interactive-embed.js?Nid={ARTICLE_KEY}` + `data-scroll-container=".body-wrapper"` — 사내 CDN, `Nid`는 대문자 N | `https://assets.hankookilbo.com/components/interactive-embed/v1/interactive-embed.js`                                          |
 | 카카오 SDK **v2**                               | `t1.kakaocdn.net/kakao_js_sdk/2.7.6/kakao.min.js` + `Kakao.init(...)` (초기화 여부 확인 후) | 앱키 `e62df5186f0758def8f14c53e64d7b9d`. 인터랙티브 헤더가 같은 v2를 쓴다. v1(`developers.kakao.com/sdk/js/kakao.min.js`) 금지 |
@@ -161,7 +162,7 @@ AI가 작업 중 반드시 지켜야 하는 최상위 규칙 3가지:
 ```bash
 npm run build && \
 test -f dist/index.html && echo "OK dist/index.html" && \
-for key in G-HR08PM6YWZ www.hankookilbo.com/Inc/Js/hkAnalTag_hub.js \
+for key in G-HR08PM6YWZ code.jquery.com/jquery-3.7.1.min.js www.hankookilbo.com/Inc/Js/hkAnalTag_hub.js \
            interactive-embed.js iconFont.css hk_fonts.css kakao.min.js \
            hk:nw_newsid hk:nw_pagecode og:image kakao_og_image twitter:card \
            byline body-wrapper full-loader data-scroll-container; do
@@ -538,6 +539,8 @@ import "../styles/style.sass";
       data-scroll-container=".body-wrapper"
     ></script>
 
+    <!-- jQuery — 아래 통계 스크립트(hkAnalTag_hub.js)가 $ 를 쓴다. 반드시 통계 스크립트보다 앞 -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" is:inline></script>
     <!-- 한국일보 통계 (Hmap 1.0) — www 절대 경로 -->
     <script src="https://www.hankookilbo.com/Inc/Js/hkAnalTag_hub.js" is:inline></script>
   </head>
@@ -578,7 +581,7 @@ import "../styles/style.sass";
 </html>
 ```
 
-통계 스크립트(`hkAnalTag_hub.js`)는 `www.hankookilbo.com` 절대 경로라 로컬에서도 로드된다. 콘솔에 404가 나면 경로를 확인한다.
+통계 스크립트(`hkAnalTag_hub.js`)는 `www.hankookilbo.com` 절대 경로라 로컬에서도 로드된다. 콘솔에 404가 나면 경로를 확인한다. 콘솔에 `$ is not defined`가 나면 jQuery가 통계 스크립트 뒤에 있는 것이다 — 순서를 바꾼다 (`self_check.js`가 검사).
 
 ---
 
@@ -1461,6 +1464,7 @@ npm run preview
 --- 필수 요건 (0-1장) ---
 [ ] npm run build 산출물이 dist/ 에 생성됨 (dist/index.html 존재)
 [ ] dist/index.html 에 G-HR08PM6YWZ 포함, 개편 전 ID(GTM-59599H7, UA-53476308-*, G-ZPZ8BHZPSJ, G-BZHTEE2B8L) 없음
+[ ] dist/index.html 에 https://code.jquery.com/jquery-3.7.1.min.js 포함, hkAnalTag_hub.js 보다 앞
 [ ] dist/index.html 에 https://www.hankookilbo.com/Inc/Js/hkAnalTag_hub.js 포함 (hkFunc.js 없음)
 [ ] dist/index.html 에 hk:nw_* 메타 5종 포함
 [ ] dist/index.html 에 interactive-embed.js?Nid=<ARTICLE_KEY> 포함 (대문자 N, 값이 META.ts와 동일)

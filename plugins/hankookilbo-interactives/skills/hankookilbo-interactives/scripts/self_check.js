@@ -18,6 +18,7 @@ const path = require("path");
 // hk-interactive-template.md 0-1장 "빌드 후 자동 검증"과 동일한 목록
 const REQUIRED_DIST_KEYS = [
   "G-HR08PM6YWZ", // GA4 — 이 스트림 하나로 통일 (개편 전 GTM/UA/다른 G-* 금지, 아래 1-0 검사)
+  "code.jquery.com/jquery-3.7.1.min.js", // hkAnalTag_hub.js 가 $ 를 쓴다 — 통계 스크립트보다 앞 (아래 1-0b 순서 검사)
   "www.hankookilbo.com/Inc/Js/hkAnalTag_hub.js", // 한국일보 통계 (Hmap 1.0), www 절대 경로
   "components/interactive-embed/v1/interactive-embed.js?Nid=", // 인터랙티브 임베드 (Nid 대문자 N)
   "iconFont.css",
@@ -99,6 +100,13 @@ if (fs.existsSync(distIndex)) {
   const legacyAnalytics = [...new Set(html.match(/GTM-59599H7|UA-53476308-\d|G-ZPZ8BHZPSJ|G-BZHTEE2B8L|hkFunc\.js/g) || [])];
   check("개편 전 통계 스크립트 없음 (GA4는 G-HR08PM6YWZ 하나)", legacyAnalytics.length ? "fail" : "pass",
     legacyAnalytics.length ? `개편 전 식별자가 있습니다: ${legacyAnalytics.join(", ")} — Layout.astro에서 지우고 템플릿 5장의 gtag 스니펫(G-HR08PM6YWZ)과 hkAnalTag_hub.js만 두세요.` : "");
+  // jQuery 가 통계 스크립트보다 뒤면 hkAnalTag_hub.js 가 `$ is not defined` 로 멈춰 Hmap 수집이 안 된다 (운영 페이지에서 실측)
+  const jqueryAt = html.indexOf("code.jquery.com/jquery-3.7.1.min.js");
+  const hubAt = html.indexOf("www.hankookilbo.com/Inc/Js/hkAnalTag_hub.js");
+  if (jqueryAt >= 0 && hubAt >= 0) {
+    check("jQuery 가 통계 스크립트(hkAnalTag_hub.js)보다 앞", jqueryAt < hubAt ? "pass" : "fail",
+      jqueryAt < hubAt ? "" : "hkAnalTag_hub.js 가 jQuery 보다 먼저 실행됩니다. Layout.astro 에서 jquery-3.7.1.min.js <script> 를 hkAnalTag_hub.js 앞으로 옮기세요.");
+  }
   const ownHeader = /class="article-bar"/.test(html);
   check("자체 헤더(article-bar) 없음", ownHeader ? "fail" : "pass",
     ownHeader ? "헤더는 interactive-embed.js가 붙이는 <interactive-header> 하나만 씁니다. article-bar 를 제거하세요." : "");
