@@ -5,15 +5,7 @@
 # - 인증: GitHub OIDC → AWS 역할. 장기 키 없음.
 # - 롤백: 되돌릴 커밋을 ref 로 골라 같은 워크플로를 다시 실행한다 (산출물은 커밋에서 재생성).
 # - 역할 ARN·버킷·배포 ID 는 코드에 적지 않는다 — 저장소 Variables AWS_ROLE_ARN_PRD / ASSETS_BUCKET_PRD /
-#   ASSETS_DISTRIBUTION_PRD 에서 읽는다 (공개 저장소).
 #
-# 단계는 hk-frontend 의 reusable-s3-mutable-publish 와 같다. 재사용 워크플로를 부르지 않고 여기 직접 적은 이유:
-# 이 저장소는 공개(public)이고 hk-frontend 는 비공개(private)라 GitHub 이 호출을 막는다
-# ("public caller → public workflows only", docs: Reusing workflow configurations › Access to reusable workflows).
-# 그래서 OIDC 토큰의 job_workflow_ref 는 이 파일 자신이다 — IAM 역할 신뢰 조건은 다음 두 클레임으로 건다.
-#   sub              = repo:hkilbo/claude-plugins:ref:refs/heads/main
-#   job_workflow_ref = hkilbo/claude-plugins/.github/workflows/publish-claude-plugins-prd.yml@refs/heads/main
-# 세 스테이지 파일은 스테이지 이름(DEV/STG/PRD)만 다르다 — 고칠 때 셋을 같이 고친다.
 name: Publish claude-plugins prd
 
 on:
