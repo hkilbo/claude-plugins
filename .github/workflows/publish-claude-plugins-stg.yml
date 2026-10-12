@@ -1,0 +1,47 @@
+# 플러그인 목록(index.json)과 다운로드 zip 을 사내 CDN(assets 버킷) /claude-plugins/ 에 올린다 — stg
+# HERB(인터랙티브 > Claude 스킬)가 이 경로를 읽어 목록·SKILL.md 보기·다운로드를 보여 준다.
+#
+# - 실행: 수동(workflow_dispatch). 게시 = 라이브이므로 실행 시점을 사람이 정한다.
+# - 인증: GitHub OIDC → AWS 역할 (hk-frontend reusable-s3-mutable-publish, 장기 키 없음)
+# - 롤백: 되돌릴 커밋을 ref 로 골라 같은 워크플로를 다시 실행한다 (산출물은 커밋에서 재생성).
+# - 역할 ARN·버킷·배포 ID 는 코드에 적지 않는다 — 저장소 Variables AWS_ROLE_ARN_STG / ASSETS_BUCKET_STG /
+#   ASSETS_DISTRIBUTION_STG 에서 읽는다 (공개 저장소). 역할·정책: CONTRIBUTING.md 「CDN 업로드」
+# stg 는 이동 태그(@v1)를 참조한다. IAM 신뢰 조건이 job_workflow_ref …@refs/tags/v1 로 고정돼 있다.
+name: Publish claude-plugins stg
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: publish-claude-plugins-stg
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    uses: hkilbo/hk-frontend/.github/workflows/reusable-s3-mutable-publish.yml@v1
+    with:
+      # GitHub Environment 는 쓰지 않는다 — 역할 신뢰 정책이 sub(…:ref:refs/heads/main)으로 main 실행만 허용한다.
+      aws-role-to-assume: ${{ vars.AWS_ROLE_ARN_STG }}
+      # build-assets.mjs 는 node 표준 라이브러리 + zip 명령만 쓴다 — 의존성 설치 불필요
+      package-manager: none
+      # 자격증명 발급 전에 실행된다 — AWS API 를 호출하지 않는 순수 생성
+      prepare-command: node scripts/build-assets.mjs --out build/claude-plugins
+      source-dir: build/claude-plugins
+      deployment-name: claude-plugins
+      s3-bucket: ${{ vars.ASSETS_BUCKET_STG }}
+      s3-prefix: claude-plugins
+      # zip·SKILL.md 먼저, 목록(index.json)은 마지막 — 목록이 아직 없는 파일을 가리키는 순간을 없앤다.
+      # sync-delete 는 각 패턴 안에서만 동작한다: 마켓플레이스에서 뺀 플러그인의 zip·SKILL.md 가 지워진다.
+      upload-rules: |
+        [
+          { "pattern": "*.zip", "cache-control": "max-age=300", "sync-delete": true, "content-type": "application/zip" },
+          { "pattern": "*/SKILL.md", "cache-control": "max-age=300", "sync-delete": true, "content-type": "text/markdown; charset=utf-8" },
+          { "pattern": "index.json", "cache-control": "max-age=300", "content-type": "application/json; charset=utf-8" }
+        ]
+      cloudfront-distribution-id: ${{ vars.ASSETS_DISTRIBUTION_STG }}
+      cloudfront-path-whitelist: |
+        /claude-plugins/*

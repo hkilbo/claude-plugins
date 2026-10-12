@@ -16,3 +16,6 @@ Thumbs.db
 .idea/
 .vscode/
 *.swp
+
+# 배포 자산 빌드 결과 (scripts/build-assets.mjs) — CDN 에만 올린다
+/build/
