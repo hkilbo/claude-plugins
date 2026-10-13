@@ -27,7 +27,8 @@ description: 한국일보 인터랙티브 기사 페이지(스크롤 여정형, 
   2. `npm run build` 산출물은 항상 `dist/` (astro.config.mjs의 `outDir` 변경 금지)
   3. 전체 산출물 용량 상한 (템플릿 권장 10MB / 스킬 상한 80MB)
   4. 폰트는 한국일보 CDN(`https://assets.hankookilbo.com/fonts/hk_fonts.css`)만 사용.
-     `public/fonts/`, 폰트 파일 커밋, `@font-face` 직접 선언 금지
+     `public/fonts/`, 폰트 파일 커밋, `@font-face` 직접 선언 금지 (예외: 스킬이 주는 아이콘 폰트
+     `public/addon/icon_font/`)
   5. 사진·영상 등 모든 소재는 사용 권한이 확인된 것만 쓰고, 화면에 출처(크레딧)를 표기
   6. 공유 이미지 2장 필수 — `public/img/ogimage.png` **1200×630**(페이스북·X),
      `public/img/ogimage_kakao.png` **800×800**(카카오톡). `self_check.js`가 파일 존재와
@@ -112,12 +113,23 @@ description: 한국일보 인터랙티브 기사 페이지(스크롤 여정형, 
 cp -r assets/common/. <프로젝트폴더>/public/img/common/
 ```
 
+**공통 자산(아이콘 폰트)**: `assets/addon/icon_font/`에 한국일보 아이콘 폰트(`iconFont.css` +
+`fonts/hk.*`)가 들어있습니다. 바이라인 공유 4종 아이콘이 이 폰트입니다. 폴더째 복사하고,
+`Layout.astro`에서는 `./addon/icon_font/iconFont.css` 상대 경로로 링크합니다 (템플릿 5장):
+
+```bash
+cp -r assets/addon <프로젝트폴더>/public/
+```
+
+CDN 주소(`interactive.hankookilbo.com/addon/icon_font/…`)로 링크하면 그 서버가 다른 출처를
+허용하지 않아 로컬에서 아이콘이 빈 네모로 보입니다. `self_check.js`가 확인합니다.
+
 **폰트는 복사하지 않습니다.** 한국일보 CDN의
 `https://assets.hankookilbo.com/fonts/hk_fonts.css`를 `Layout.astro` `<head>`에서
 링크하는 방식이고, 템플릿 5장 Layout 원문에 이미 들어있습니다. 제공 서체는
 `'Pretendard Variable'`(가변, 45~920)과 `'NanumMyeongjo'`(400/700/800) 두 가지이며
 스타일에서는 `$fontBase` / `$fontSerif` 변수로 씁니다 (템플릿 7장). `public/fonts/`
-폴더, 폰트 파일, `@font-face` 선언을 만들지 마세요 — `scripts/self_check.js`가
+폴더, 폰트 파일, `@font-face` 선언을 만들지 마세요(아이콘 폰트 `public/addon/icon_font/`만 예외) — `scripts/self_check.js`가
 발견하면 실패 처리합니다. 다른 서체가 필요하면 한국일보 프론트개발팀에
 `hk_fonts.css` 추가를 요청하세요.
 
@@ -228,6 +240,8 @@ Byline(콘텐츠 크레딧)은 2단계에서 이미 `Layout.astro`에 포함되�
   자동 확인)
 - `BYLINE_MEMBERS`가 실제 제작진 정보로 채워졌는지
 - 사진·영상마다 출처(크레딧)가 화면에 표기됐는지
+- 바이라인 공유 4종(페이스북·X·카카오톡·URL 복사)이 동작하는지 — 카카오 카드에 `ogimage_kakao.png`가
+  뜨는지. `self_check.js`가 `share-tools` 존재와 카카오 v1 API(`Kakao.Link`) 미사용을 검사
 - 로딩 화면(스피너)이 떠 있는 동안 헤더가 보이지 않는지. `_full_loader.sass`의
   `body.loading interactive-header` / `opacity: 0 !important` 규칙이 담당하며 `self_check.js`가
   있는지 확인합니다. 헤더를 건드리는 CSS는 이 한 줄이 유일한 예외입니다 (템플릿 0-1장 "헤더").

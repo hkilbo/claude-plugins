@@ -21,24 +21,38 @@ const REQUIRED_DIST_KEYS = [
   "code.jquery.com/jquery-3.7.1.min.js", // hkAnalTag_hub.js 가 $ 를 쓴다 — 통계 스크립트보다 앞 (아래 1-0b 순서 검사)
   "www.hankookilbo.com/Inc/Js/hkAnalTag_hub.js", // 한국일보 통계 (Hmap 1.0), www 절대 경로
   "components/interactive-embed/v1/interactive-embed.js?Nid=", // 인터랙티브 임베드 (Nid 대문자 N)
-  "iconFont.css",
+  "addon/icon_font/iconFont.css", // 아이콘 폰트 — public/addon/icon_font/ 상대 경로 (아래 4-1 검사)
   "assets.hankookilbo.com/fonts/hk_fonts.css", // 웹폰트 CDN (템플릿 7장)
   "t1.kakaocdn.net/kakao_js_sdk/2.7.6/kakao.min.js", // 카카오 SDK v2 (인터랙티브 헤더와 동일 버전)
   "hk:nw_newsid",
   "hk:nw_pagecode",
-  'property="og:locale" content="ko_KR"',
   "og:image",
-  'property="og:image:width" content="1200"', // 공유 카드 크기 명시 (1200×630)
-  'property="og:image:height" content="630"',
   "kakao_og_image", // 카카오 공유 카드 이미지 메타 (800×800, 인터랙티브 헤더 공유가 읽음)
   "twitter:card",
-  'name="twitter:image:width" content="1200"',
-  'name="twitter:image:height" content="630"',
   "byline",
+  "share-tools", // 바이라인 공유 4종 (ShareLinks.astro)
   "body-wrapper",
   "full-loader",
   "Copyright © Hankookilbo", // 바이라인 맨 끝 저작권 문구 (공통 푸터를 쓰지 않으므로 필수)
 ];
+
+// 공유 메타 — 값까지 맞아야 한다. 압축기(astro-compress)가 따옴표를 빼고 속성 순서를 바꾸므로 문자열이 아니라 태그를 읽어 비교한다
+const REQUIRED_METAS = [
+  ["property", "og:locale", "ko_KR"],
+  ["property", "og:image:width", "1200"], // 공유 카드 크기 명시 (1200×630)
+  ["property", "og:image:height", "630"],
+  ["name", "twitter:image:width", "1200"],
+  ["name", "twitter:image:height", "630"],
+];
+function readMetaTags(html) {
+  return (html.match(/<meta\b[^>]*>/gi) || []).map((tag) => {
+    const attrs = {};
+    for (const m of tag.matchAll(/([\w:-]+)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>]+))/g)) {
+      attrs[m[1].toLowerCase()] = m[2] ?? m[3] ?? m[4];
+    }
+    return attrs;
+  });
+}
 
 // META.ts에 남아있으면 안 되는 템플릿 기본값(=아직 안 채운 상태) 표시
 const META_PLACEHOLDER_MARKERS = [
@@ -51,7 +65,10 @@ const META_PLACEHOLDER_MARKERS = [
 const MAX_TOTAL_SIZE_MB = 80; // 넉넉한 상한. 템플릿 권장치(10MB)는 별도 안내만.
 
 // 폰트는 사내 CDN(hk_fonts.css)만 쓴다. 프로젝트 안에 폰트 파일/@font-face가 있으면 실패.
+// 예외: 스킬이 주는 아이콘 폰트 (public/addon/icon_font/ → dist/addon/icon_font/)
 const FONT_FILE_EXT = /\.(woff2?|ttf|otf|eot)$/i;
+const ICON_FONT_DIR = ["addon", "icon_font"];
+const ICON_FONT_FILES = ["iconFont.css", "fonts/hk.woff", "fonts/hk.ttf"];
 const STYLE_FILE_EXT = /\.(sass|scss|css|astro|tsx|jsx)$/i;
 
 const rootDir = process.argv[2];
@@ -96,6 +113,19 @@ if (!fs.existsSync(distIndex)) {
   );
 }
 
+// 1-0a. 공유 메타 값 (og:locale, og/twitter 이미지 크기) + 바이라인 공유 버튼
+if (fs.existsSync(distIndex)) {
+  const html = fs.readFileSync(distIndex, "utf-8");
+  const metas = readMetaTags(html);
+  const missingMetas = REQUIRED_METAS.filter(([attr, key, value]) => !metas.some((m) => m[attr] === key && m.content === value))
+    .map(([attr, key, value]) => `<meta ${attr}="${key}" content="${value}">`);
+  check("공유 메타 (og:locale ko_KR, og·twitter 이미지 1200×630)", missingMetas.length ? "fail" : "pass",
+    missingMetas.length ? `누락 또는 값 다름: ${missingMetas.join(", ")} — 템플릿 5장 Layout 원문을 확인하세요.` : "");
+  const shareKinds = ["fb", "twt", "kkt", "url"].filter((k) => !new RegExp(`data-share=["']?${k}\\b`).test(html));
+  check("바이라인 공유 4종 (ShareLinks.astro)", shareKinds.length ? "fail" : "pass",
+    shareKinds.length ? `빠진 버튼: ${shareKinds.join(", ")} — 템플릿 6장 ShareLinks.astro 를 바이라인에 넣으세요.` : "");
+}
+
 // 1-0. 금지 항목: 카카오 SDK v1, 개편 전 통계 스크립트, 자체 헤더(구 ArticleBar)
 if (fs.existsSync(distIndex)) {
   const html = fs.readFileSync(distIndex, "utf-8");
@@ -112,6 +142,10 @@ if (fs.existsSync(distIndex)) {
     check("jQuery 가 통계 스크립트(hkAnalTag_hub.js)보다 앞", jqueryAt < hubAt ? "pass" : "fail",
       jqueryAt < hubAt ? "" : "hkAnalTag_hub.js 가 jQuery 보다 먼저 실행됩니다. Layout.astro 에서 jquery-3.7.1.min.js <script> 를 hkAnalTag_hub.js 앞으로 옮기세요.");
   }
+  // hkFunc.js 의 shareKakaotalk 가 쓰는 Kakao.Link 는 SDK v1 API — v2(2.7.6) 에서는 없어서 호출하면 오류
+  const kakaoV1Api = /Kakao\.Link\b/.test(html);
+  check("카카오 v1 API(Kakao.Link) 미사용", kakaoV1Api ? "fail" : "pass",
+    kakaoV1Api ? "Kakao.Link 호출이 있습니다 (hkFunc.js 등). SDK v2 에서는 Kakao.Share.sendDefault 를 씁니다 — 템플릿 6장 ShareLinks.astro 를 쓰세요." : "");
   const ownHeader = /class="article-bar"/.test(html);
   check("자체 헤더(article-bar) 없음", ownHeader ? "fail" : "pass",
     ownHeader ? "헤더는 interactive-embed.js가 붙이는 <interactive-header> 하나만 씁니다. article-bar 를 제거하세요." : "");
@@ -257,9 +291,15 @@ for (const img of SHARE_IMAGES) {
     check(label, "fail", `public/img/${img.file} 은 맞는데 dist/img/${img.file} 이 없습니다. npm run build 를 다시 실행하세요.`);
     continue;
   }
+  // 바이트 크기는 비교하지 않는다 — 압축기(astro-compress)가 PNG 를 다시 압축한다. 픽셀 크기와 빌드 시점으로 본다
   const distSize = readPngSize(distFile);
-  const same = distSize && distSize.width === size.width && distSize.height === size.height && fs.statSync(distFile).size === fs.statSync(file).size;
-  check(label, same ? "pass" : "fail", same ? "public/·dist/ 모두 확인" : `dist/img/${img.file} 이 public/ 과 다릅니다(이전 빌드 산출물). npm run build 를 다시 실행하세요.`);
+  if (!distSize || distSize.width !== img.width || distSize.height !== img.height) {
+    check(label, "fail", `dist/img/${img.file} 크기가 ${distSize ? distSize.width + "×" + distSize.height : "읽을 수 없음"} 입니다. npm run build 를 다시 실행하세요.`);
+  } else if (fs.statSync(distFile).mtimeMs < fs.statSync(file).mtimeMs) {
+    check(label, "fail", `public/img/${img.file} 이 마지막 빌드 뒤에 바뀌었습니다. npm run build 를 다시 실행하세요.`);
+  } else {
+    check(label, "pass", "public/·dist/ 모두 확인");
+  }
 }
 
 // 4. 로더 이미지 존재 (스킬 assets/common/에서 복사)
@@ -275,14 +315,32 @@ check(
     : ""
 );
 
+// 4-1. 아이콘 폰트 — 프로젝트 안에 있고, 상대 경로로 링크하는지 (CDN 링크는 로컬에서 CORS 로 아이콘이 빈 네모)
+{
+  const missingIcon = ["public", "dist"].flatMap((top) =>
+    ICON_FONT_FILES.map((f) => path.join(top, ...ICON_FONT_DIR, f)).filter((rel) => !fs.existsSync(path.join(rootDir, rel)))
+  );
+  check("아이콘 폰트 (public/·dist/ addon/icon_font/)", missingIcon.length ? "fail" : "pass",
+    missingIcon.length
+      ? `누락: ${missingIcon.slice(0, 4).join(", ")}${missingIcon.length > 4 ? ` 외 ${missingIcon.length - 4}개` : ""} — 스킬의 assets/addon 을 public/ 에 복사(cp -r assets/addon public/)하고 npm run build 를 다시 실행하세요.`
+      : "");
+  if (fs.existsSync(distIndex)) {
+    const html = fs.readFileSync(distIndex, "utf-8");
+    const cdnLink = /interactive\.hankookilbo\.com\/addon\/icon_font\/iconFont\.css/.test(html);
+    check("아이콘 폰트 상대 경로 링크", cdnLink ? "fail" : "pass",
+      cdnLink ? "iconFont.css 를 CDN 주소로 링크하고 있습니다. 로컬에서 CORS 로 아이콘이 안 뜹니다 — ./addon/icon_font/iconFont.css 로 바꾸세요." : "");
+  }
+}
+
 // 5. 폰트는 CDN만 — 프로젝트/산출물 안에 폰트 파일이나 @font-face가 있으면 실패
 const projectFiles = ["public", "src", "dist"]
   .map((d) => path.join(rootDir, d))
   .filter((d) => fs.existsSync(d))
   .flatMap((d) => getAllFiles(d));
-const fontFiles = projectFiles.filter((f) => FONT_FILE_EXT.test(f));
+const isIconFont = (f) => path.relative(rootDir, f).split(path.sep).slice(1, 3).join("/") === ICON_FONT_DIR.join("/");
+const fontFiles = projectFiles.filter((f) => FONT_FILE_EXT.test(f) && !isIconFont(f));
 check(
-  "폰트 파일 없음 (폰트는 CDN hk_fonts.css만 사용)",
+  "폰트 파일 없음 (웹폰트는 CDN hk_fonts.css만, 아이콘 폰트 제외)",
   fontFiles.length === 0 ? "pass" : "fail",
   fontFiles.length
     ? `발견: ${fontFiles.slice(0, 5).map((p) => path.relative(rootDir, p)).join(", ")}${fontFiles.length > 5 ? ` 외 ${fontFiles.length - 5}개` : ""} — 삭제하고 CDN 서체($fontBase/$fontSerif)를 쓰세요.`
