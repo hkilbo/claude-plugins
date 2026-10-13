@@ -9,7 +9,7 @@
 | 플러그인 | 버전 | 설명 |
 |---|---|---|
 | [`hankookilbo-slides`](plugins/hankookilbo-slides) | 0.3.1 | 한국일보 공식 슬라이드 서식으로 보고 자료를 만들고, 기존 문서를 공식 서식으로 바꾸고, 서식 준수 여부를 점검합니다. 템플릿과 로고가 함께 들어 있습니다. |
-| [`hankookilbo-interactives`](plugins/hankookilbo-interactives) | 0.2.0 | 한국일보 인터랙티브 기사 페이지(Astro + React)를 공식 템플릿으로 만듭니다. 기획부터 자체 점검·전달용 zip 패키징까지 진행하고, 캐러셀·스크롤·지도에 쓸 라이브러리를 규칙대로 고릅니다. 외주 제작사와 공용. |
+| [`hankookilbo-interactives`](plugins/hankookilbo-interactives) | 0.3.0 | 한국일보 인터랙티브 기사 페이지(Astro + React)를 공식 템플릿으로 만듭니다. 기획부터 자체 점검·전달용 zip 패키징까지 진행하고, 캐러셀·스크롤·지도에 쓸 라이브러리를 규칙대로 고릅니다. 외주 제작사와 공용. |
 
 ## 설치
 
