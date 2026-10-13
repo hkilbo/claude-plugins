@@ -6,7 +6,7 @@
  *
  * references/hk-interactive-template.md "0-1. 필수 요건 / 빌드 후 자동 검증"에
  * 나오는 grep 체크리스트를 그대로 구현한 것 + 이 스킬의 고정 규칙(폰트는 CDN만 사용,
- * 로더 이미지, 용량 상한, META.ts 실제 값)을 추가로 검사합니다.
+ * 공유 이미지 2장(존재·PNG·픽셀 크기), 로더 이미지, 용량 상한, META.ts 실제 값)을 추가로 검사합니다.
  *
  * 주의: hk-interactive-template.md가 갱신되면(식별자 추가/변경) 아래
  * REQUIRED_DIST_KEYS도 함께 갱신해야 합니다.
@@ -26,9 +26,14 @@ const REQUIRED_DIST_KEYS = [
   "t1.kakaocdn.net/kakao_js_sdk/2.7.6/kakao.min.js", // 카카오 SDK v2 (인터랙티브 헤더와 동일 버전)
   "hk:nw_newsid",
   "hk:nw_pagecode",
+  'property="og:locale" content="ko_KR"',
   "og:image",
-  "kakao_og_image", // 카카오 공유 카드 이미지 메타 (인터랙티브 헤더 공유가 읽음)
+  'property="og:image:width" content="1200"', // 공유 카드 크기 명시 (1200×630)
+  'property="og:image:height" content="630"',
+  "kakao_og_image", // 카카오 공유 카드 이미지 메타 (800×800, 인터랙티브 헤더 공유가 읽음)
   "twitter:card",
+  'name="twitter:image:width" content="1200"',
+  'name="twitter:image:height" content="630"',
   "byline",
   "body-wrapper",
   "full-loader",
@@ -218,6 +223,43 @@ if (!fs.existsSync(metaPath)) {
     leftover.length === 0 ? "pass" : "fail",
     leftover.length ? `템플릿 기본값이 남아있음: ${leftover.join(", ")}` : ""
   );
+}
+
+// 4-0. 공유 이미지 2장 — 파일이 있고 PNG 이며 픽셀 크기가 정확한지 (템플릿 11장)
+const SHARE_IMAGES = [
+  { file: "ogimage.png", width: 1200, height: 630, label: "페이스북·X" },
+  { file: "ogimage_kakao.png", width: 800, height: 800, label: "카카오톡" },
+];
+function readPngSize(file) {
+  const buf = fs.readFileSync(file);
+  const isPng = buf.length > 24 && buf.toString("hex", 0, 8) === "89504e470d0a1a0a" && buf.toString("ascii", 12, 16) === "IHDR";
+  return isPng ? { width: buf.readUInt32BE(16), height: buf.readUInt32BE(20) } : null;
+}
+for (const img of SHARE_IMAGES) {
+  const label = `공유 이미지 ${img.file} (${img.label}, ${img.width}×${img.height})`;
+  const file = path.join(rootDir, "public", "img", img.file);
+  if (!fs.existsSync(file)) {
+    check(label, "fail", `public/img/${img.file} 이 없습니다. ${img.width}×${img.height} PNG 로 만들어 올리세요 — 공유 카드가 깨집니다.`);
+    continue;
+  }
+  const size = readPngSize(file);
+  if (!size) {
+    check(label, "fail", `public/img/${img.file} 이 PNG 가 아닙니다. 확장자만 바꾸지 말고 PNG 로 저장하세요.`);
+    continue;
+  }
+  if (size.width !== img.width || size.height !== img.height) {
+    check(label, "fail", `크기가 ${size.width}×${size.height} 입니다. 정확히 ${img.width}×${img.height} 으로 다시 만드세요.`);
+    continue;
+  }
+  // 배포되는 건 dist/ 다 — public/ 에만 있고 dist/ 에 없으면(빌드 전 추가, 빌드 생략) 공유 카드가 깨진다
+  const distFile = path.join(rootDir, "dist", "img", img.file);
+  if (!fs.existsSync(distFile)) {
+    check(label, "fail", `public/img/${img.file} 은 맞는데 dist/img/${img.file} 이 없습니다. npm run build 를 다시 실행하세요.`);
+    continue;
+  }
+  const distSize = readPngSize(distFile);
+  const same = distSize && distSize.width === size.width && distSize.height === size.height && fs.statSync(distFile).size === fs.statSync(file).size;
+  check(label, same ? "pass" : "fail", same ? "public/·dist/ 모두 확인" : `dist/img/${img.file} 이 public/ 과 다릅니다(이전 빌드 산출물). npm run build 를 다시 실행하세요.`);
 }
 
 // 4. 로더 이미지 존재 (스킬 assets/common/에서 복사)

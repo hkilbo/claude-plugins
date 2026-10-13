@@ -113,7 +113,7 @@ AI가 작업 중 반드시 지켜야 하는 최상위 규칙 3가지:
 | 카카오 SDK **v2**                               | `t1.kakaocdn.net/kakao_js_sdk/2.7.6/kakao.min.js` + `Kakao.init(...)` (초기화 여부 확인 후) | 앱키 `e62df5186f0758def8f14c53e64d7b9d`. 인터랙티브 헤더가 같은 v2를 쓴다. v1(`developers.kakao.com/sdk/js/kakao.min.js`) 금지 |
 | 아이콘 폰트                                     | `iconFont.css`                                                                              | `https://interactive.hankookilbo.com/addon/icon_font/iconFont.css`                                                             |
 | 웹폰트 (Pretendard Variable, NanumMyeongjo)     | `hk_fonts.css` — 사내 CDN, 폰트 파일을 저장소에 두지 않는다                                 | `https://assets.hankookilbo.com/fonts/hk_fonts.css`                                                                            |
-| OG / Twitter / 카카오                           | `og:title`, `og:description`, `og:image`, `twitter:*` 전체 + `<meta name="kakao_og_image">` | META.ts에서 주입. 인터랙티브 헤더의 공유 카드가 이 메타를 읽는다                                                               |
+| OG / Twitter / 카카오                           | `og:locale` ko_KR, `og:title`, `og:description`, `og:image`(+`og:image:width` 1200·`og:image:height` 630), `twitter:*` 전체(+`twitter:image:width`·`height`) + `<meta name="kakao_og_image">`(800×800, 절대 경로) | META.ts에서 주입. 인터랙티브 헤더의 공유 카드가 이 메타를 읽는다                                                               |
 | 파비콘                                          | `//image.hankookilbo.com/o/img/favicon.ico`                                                 |                                                                                                                                |
 
 전체 원문은 5장 `Layout.astro`에 있다. GA와 GTM 스크립트는 반드시 `<script is:inline>`으로 써서 Astro가 번들링하지 않게 한다.
@@ -164,7 +164,7 @@ npm run build && \
 test -f dist/index.html && echo "OK dist/index.html" && \
 for key in G-HR08PM6YWZ code.jquery.com/jquery-3.7.1.min.js www.hankookilbo.com/Inc/Js/hkAnalTag_hub.js \
            interactive-embed.js iconFont.css hk_fonts.css kakao.min.js \
-           hk:nw_newsid hk:nw_pagecode og:image kakao_og_image twitter:card \
+           hk:nw_newsid hk:nw_pagecode og:locale og:image og:image:width twitter:image:width kakao_og_image twitter:card \
            byline body-wrapper full-loader data-scroll-container; do
   grep -q "$key" dist/index.html && echo "OK $key" || echo "MISSING $key"
 done
@@ -201,8 +201,8 @@ Vue, Svelte 등 다른 프레임워크는 쓰지 않는다. 정적 HTML은 `.ast
 ├── public/
 │   ├── favicon.svg
 │   └── img/
-│       ├── ogimage.png        # 1200x630  (페이스북/트위터 OG)
-│       ├── ogimage_kakao.png  # 800x400   (카카오톡 공유)
+│       ├── ogimage.png        # 1200x630  (페이스북/X OG) — 필수, self_check.js가 크기 검사
+│       ├── ogimage_kakao.png  # 800x800   (카카오톡 공유) — 필수, self_check.js가 크기 검사
 │       ├── common/            # 로더, 로고, SNS 아이콘 (템플릿 공통, 수정 금지)
 │       └── ...                # 프로젝트 이미지
 ├── src/
@@ -456,6 +456,7 @@ import "../styles/style.sass";
 
     <!-- Open Graph -->
     <meta property="og:site_name" content="한국일보" />
+    <meta property="og:locale" content="ko_KR" />
     <meta property="og:type" content="website" />
     <meta property="og:url" content={THIS_URL} />
     <meta property="og:title" content={`[인터랙티브] ${HTML_TITLE}`} />
@@ -464,7 +465,9 @@ import "../styles/style.sass";
       property="og:image"
       content={`https://interactive.hankookilbo.com/v/${FOLDER_NAME}/img/ogimage.png`}
     />
-    <!-- 카카오톡 공유 카드 이미지 (800x400). 인터랙티브 헤더의 카카오 공유가 이 메타를 읽는다 -->
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <!-- 카카오톡 공유 카드 이미지 (800x800, 절대 경로). 인터랙티브 헤더의 카카오 공유가 이 메타를 읽는다 -->
     <meta
       name="kakao_og_image"
       content={`https://interactive.hankookilbo.com/v/${FOLDER_NAME}/img/ogimage_kakao.png`}
@@ -479,9 +482,15 @@ import "../styles/style.sass";
     <meta name="twitter:title" content={`[인터랙티브] ${HTML_TITLE}`} />
     <meta name="twitter:description" content={HTML_DESC} />
     <meta
+      name="twitter:image"
+      content={`https://interactive.hankookilbo.com/v/${FOLDER_NAME}/img/ogimage.png`}
+    />
+    <meta
       name="twitter:image:src"
       content={`https://interactive.hankookilbo.com/v/${FOLDER_NAME}/img/ogimage.png`}
     />
+    <meta name="twitter:image:width" content="1200" />
+    <meta name="twitter:image:height" content="630" />
     <meta name="twitter:creator" content="@hankookilbo" />
 
     <link
@@ -1339,13 +1348,15 @@ three.js / react-three-fiber는 반드시 `client:only="react"`로 마운트한�
 
 | 파일                                 | 규격       | 비고                                                |
 | ------------------------------------ | ---------- | --------------------------------------------------- |
-| `img/ogimage.png`                    | 1200 × 630 | 페이스북, 트위터, 카카오 기본                       |
-| `img/ogimage_kakao.png`              | 800 × 400  | 카카오톡 공유 카드 (`kakao_og_image` 메타가 가리킴) |
+| `img/ogimage.png`                    | 1200 × 630 | 페이스북·X 공유 카드. **필수** — `self_check.js`가 존재·픽셀 크기를 검사한다 |
+| `img/ogimage_kakao.png`              | 800 × 800  | 카카오톡 공유 카드 (`kakao_og_image` 메타가 가리킴). **필수** — 크기 검사 동일 |
 | `img/common/full_loader_bg.png`      |            | 로더 배경 (스킬 `assets/common/`에서 복사)          |
 | `img/common/full_loader_spinner.png` | 204 × 202  | 로더 스피너 (스킬 `assets/common/`에서 복사)        |
 | `favicon.svg`                        |            | 실제 파비콘은 Layout에서 CDN 사용                   |
 
 `img/common/`의 로더 이미지 2개는 스킬의 `assets/common/`에 있는 실제 파일을 그대로 복사한다. 새로 만들 필요 없다.
+
+공유 이미지 2장은 **프로젝트마다 새로 만들어 올린다.** 담당자가 주지 않으면 대표 사진으로 만들어 승인받는다. 템플릿 자리 이미지인 채로, 또는 크기가 다른 채로 두면 `self_check.js`가 실패 처리하고 배포하지 않는다. 형식은 PNG, 크기는 정확히 1200×630 / 800×800.
 **`public/fonts/` 폴더는 만들지 않는다.** 폰트는 CDN에서 온다 (7장 웹폰트).
 
 이미지 최적화 기준:
@@ -1481,7 +1492,8 @@ npm run preview
 
 --- 콘텐츠 ---
 [ ] META.ts 6개 상수 + POST_DATE + BYLINE_MEMBERS 모두 실제 값
-[ ] ogimage.png (1200x630), ogimage_kakao.png (800x400) 교체
+[ ] public/img/ogimage.png (1200x630), public/img/ogimage_kakao.png (800x800) 업로드, 빌드 후 dist/img/ 에도 복사됨 — self_check.js 크기 검사 통과
+[ ] dist/index.html 에 og:locale ko_KR, og:image:width/height 1200/630, twitter:image:width/height 1200/630 포함
 [ ] <title> "제목 | 한국일보" 확인
 [ ] 인터랙티브 헤더 공유 4종 (페북, X, 카카오, URL 복사) 동작 — 카카오 카드에 ogimage_kakao.png가 뜸. 바이라인에 공유 버튼 없음
 [ ] 바이라인 제작진, 게시일, 맨 끝 저작권 문구 (관련 기사 카드·공유 버튼 없음)
