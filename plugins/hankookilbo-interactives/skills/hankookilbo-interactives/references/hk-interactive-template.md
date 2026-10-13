@@ -94,8 +94,9 @@ AI가 작업 중 반드시 지켜야 하는 최상위 규칙 3가지:
 
 - `HTML_TITLE`, `POST_DATE`
 - `BYLINE_MEMBERS` 제작진 목록
-- 관련 기사 카드와 공유 버튼은 넣지 않는다 (2026-09-28 결정). 둘 다 `interactive-embed.js`가 맡는다.
-  공유 4종(페이스북, X, 카카오톡, URL 복사)은 인터랙티브 헤더에, 추천 기사는 하단 추천 카드에 있다. 한국일보 앱 웹뷰에서도 헤더 공유 버튼이 동작한다.
+- 공유 4종(페이스북, X, 카카오톡, URL 복사)을 제작진 아래, 저작권 문구 위에 넣는다 — `ShareLinks.astro` (6장). 상단 인터랙티브
+  헤더의 공유와 똑같이 동작한다 — 현재 페이지 주소, `<head>`의 `og:title`·`og:description`·`kakao_og_image` 메타를 읽는다. 카카오는 SDK v2 `Kakao.Share`만 쓴다 (`Kakao.Link`는 v1 — 금지).
+- 관련 기사 카드는 넣지 않는다 (2026-09-28 결정). `interactive-embed.js`의 하단 추천 카드가 맡는다.
 - 맨 끝에 저작권 문구 `세상을 보는 균형, 한국일보 Copyright © Hankookilbo`를 넣는다 (`<p class="copy">`). 문구를 바꾸지 않는다.
   회사 공통 푸터를 쓰지 않으므로 페이지의 저작권 표기는 이 한 줄뿐이다.
 
@@ -111,7 +112,7 @@ AI가 작업 중 반드시 지켜야 하는 최상위 규칙 3가지:
 | 한국일보 통계 메타                              | `hk:nw_newsid`, `hk:nw_press`, `hk:nw_presscode`, `hk:nw_title`, `hk:nw_pagecode`           | META.ts에서 주입                                                                                                               |
 | 인터랙티브 임베드 (헤더 웹컴포넌트 + 추천 카드) | `interactive-embed.js?Nid={ARTICLE_KEY}` + `data-scroll-container=".body-wrapper"` — 사내 CDN, `Nid`는 대문자 N | `https://assets.hankookilbo.com/components/interactive-embed/v1/interactive-embed.js`                                          |
 | 카카오 SDK **v2**                               | `t1.kakaocdn.net/kakao_js_sdk/2.7.6/kakao.min.js` + `Kakao.init(...)` (초기화 여부 확인 후) | 앱키 `e62df5186f0758def8f14c53e64d7b9d`. 인터랙티브 헤더가 같은 v2를 쓴다. v1(`developers.kakao.com/sdk/js/kakao.min.js`) 금지 |
-| 아이콘 폰트                                     | `iconFont.css`                                                                              | `https://interactive.hankookilbo.com/addon/icon_font/iconFont.css`                                                             |
+| 아이콘 폰트                                     | `iconFont.css` + `fonts/hk.*` — 스킬 `assets/addon/icon_font/`를 `public/addon/icon_font/`로 복사해 **상대 경로**로 링크. CDN 주소를 쓰면 로컬에서 CORS로 아이콘이 안 뜬다 | `./addon/icon_font/iconFont.css`                                                                                               |
 | 웹폰트 (Pretendard Variable, NanumMyeongjo)     | `hk_fonts.css` — 사내 CDN, 폰트 파일을 저장소에 두지 않는다                                 | `https://assets.hankookilbo.com/fonts/hk_fonts.css`                                                                            |
 | OG / Twitter / 카카오                           | `og:locale` ko_KR, `og:title`, `og:description`, `og:image`(+`og:image:width` 1200·`og:image:height` 630), `twitter:*` 전체(+`twitter:image:width`·`height`) + `<meta name="kakao_og_image">`(800×800, 절대 경로) | META.ts에서 주입. 인터랙티브 헤더의 공유 카드가 이 메타를 읽는다                                                               |
 | 파비콘                                          | `//image.hankookilbo.com/o/img/favicon.ico`                                                 |                                                                                                                                |
@@ -163,9 +164,9 @@ AI가 작업 중 반드시 지켜야 하는 최상위 규칙 3가지:
 npm run build && \
 test -f dist/index.html && echo "OK dist/index.html" && \
 for key in G-HR08PM6YWZ code.jquery.com/jquery-3.7.1.min.js www.hankookilbo.com/Inc/Js/hkAnalTag_hub.js \
-           interactive-embed.js iconFont.css hk_fonts.css kakao.min.js \
+           interactive-embed.js addon/icon_font/iconFont.css hk_fonts.css kakao.min.js \
            hk:nw_newsid hk:nw_pagecode og:locale og:image og:image:width twitter:image:width kakao_og_image twitter:card \
-           byline body-wrapper full-loader data-scroll-container; do
+           byline share-tools body-wrapper full-loader data-scroll-container; do
   grep -q "$key" dist/index.html && echo "OK $key" || echo "MISSING $key"
 done
 ```
@@ -200,6 +201,7 @@ Vue, Svelte 등 다른 프레임워크는 쓰지 않는다. 정적 HTML은 `.ast
 {FOLDER_NAME}/
 ├── public/
 │   ├── favicon.svg
+│   ├── addon/icon_font/       # 아이콘 폰트 (iconFont.css + fonts/hk.*) — 스킬 assets 에서 복사, 수정 금지
 │   └── img/
 │       ├── ogimage.png        # 1200x630  (페이스북/X OG) — 필수, self_check.js가 크기 검사
 │       ├── ogimage_kakao.png  # 800x800   (카카오톡 공유) — 필수, self_check.js가 크기 검사
@@ -208,7 +210,8 @@ Vue, Svelte 등 다른 프레임워크는 쓰지 않는다. 정적 HTML은 `.ast
 ├── src/
 │   ├── components/
 │   │   ├── Astro/
-│   │   │   └── byline.astro        # 하단 바이라인 (제목 + 게시일 + 제작진). 헤더는 임베드 스크립트가 붙임
+│   │   │   ├── ShareLinks.astro    # 바이라인 공유 4종 (페이스북·X·카카오·URL 복사)
+│   │   │   └── byline.astro        # 하단 바이라인 (제목 + 게시일 + 제작진 + 공유 4종). 헤더는 임베드 스크립트가 붙임
 │   │   ├── Intro.astro             # 프로젝트별 컴포넌트 (예시)
 │   │   └── SomeIsland.tsx          # React 아일랜드 (필요 시)
 │   ├── data/
@@ -510,11 +513,8 @@ import "../styles/style.sass";
     <link rel="preconnect" href="https://assets.hankookilbo.com" crossorigin="anonymous" />
     <link rel="stylesheet" href="https://assets.hankookilbo.com/fonts/hk_fonts.css" />
 
-    <!-- 한국일보 아이콘 폰트 (로고, SNS 아이콘) -->
-    <link
-      rel="stylesheet"
-      href="https://interactive.hankookilbo.com/addon/icon_font/iconFont.css"
-    />
+    <!-- 한국일보 아이콘 폰트 (로고, SNS 아이콘) — public/addon/icon_font/ (스킬 assets 에서 복사). 같은 출처라 로컬에서도 CORS 없이 뜬다 -->
+    <link rel="stylesheet" href="./addon/icon_font/iconFont.css" />
 
     <!-- 카카오 SDK v2 (공유). 인터랙티브 헤더(header.js)가 같은 주소의 v2를 쓰므로 반드시 이 주소·버전을 유지한다.
          v1(developers.kakao.com/sdk/js/kakao.min.js)을 넣으면 헤더 카카오 공유가 깨진다 (0-1장 참고) -->
@@ -606,10 +606,11 @@ import {
   BYLINE_MEMBERS,
   POST_DATE,
 } from "../../utils/constant/META";
+import ShareLinks from "./ShareLinks.astro";
 ---
 
 <div class="byline">
-  <!-- 관련 기사 카드·공유 버튼은 넣지 않는다. 추천 카드와 공유 4종은 interactive-embed.js(헤더·하단 추천 카드)가 맡는다 -->
+  <!-- 관련 기사 카드는 넣지 않는다. 추천 기사는 interactive-embed.js 의 하단 추천 카드가 맡는다 -->
   <div class="wrapper">
     <div class="logo">
       <div class="title"><span>{HTML_TITLE}</span></div>
@@ -625,10 +626,104 @@ import {
       ))
     }
 
+    <ShareLinks class="share-tools" />
+
     <p class="copy">세상을 보는 균형, 한국일보 Copyright © Hankookilbo</p>
   </div>
 </div>
 ```
+
+### `src/components/Astro/ShareLinks.astro`
+
+바이라인의 공유 4종(페이스북, X, 카카오톡, URL 복사). **상단 인터랙티브 헤더(`header.js`)의 공유와 똑같이 동작한다** — 어느 쪽을 눌러도 같은 주소·같은 카드가 나간다.
+
+| 버튼 | 동작 |
+| --- | --- |
+| 페이스북 | `facebook.com/sharer/sharer.php?u=<현재 주소>` 새 창. 카드 내용은 페이스북이 그 주소의 `og:*` 메타를 읽어 만든다 |
+| X | `twitter.com/intent/tweet?text=<문서 제목> <현재 주소>` 새 창 |
+| 카카오톡 | SDK v2 `Kakao.Share.sendDefault` — 제목 `og:title`, 설명 `og:description`, 이미지 `kakao_og_image`, 링크 현재 주소, "자세히 보기" 버튼. 앱 웹뷰에서는 `KAKAO_SHARE` 메시지로 앱에 넘긴다 |
+| URL 복사 | `location.href` 전체를 복사하고 "주소가 복사되었습니다." 알림 (실패 시 "복사 실패!") |
+
+현재 주소 = `location.origin + location.pathname` (쿼리·해시 제외). 스테이징에서 누르면 스테이징 주소, 운영에서 누르면 운영 주소가 나간다 — 헤더와 같다.
+로컬(`localhost`)에서 누르면 localhost 주소가 나가므로 페이스북·X·카카오가 카드 내용을 읽지 못한다 — 로컬에서는 버튼 동작만 확인한다.
+**카카오는 SDK v2 `Kakao.Share`를 쓴다** — `hkFunc.js`의 `Kakao.Link`(v1)는 v2에서 없어서 호출하면 오류다. `hkFunc.js`를 넣지 않는 이유다.
+
+```astro
+---
+//@ts-nocheck
+// 공유 4종 — 상단 인터랙티브 헤더(header.js)와 같은 규칙으로 동작한다. 값은 빌드 때 정하지 않고 누를 때 읽는다
+const { class: className = "share-tools" } = Astro.props;
+---
+
+<ul class={className}>
+  <li><button type="button" class="icon-hk-sns-facebook" data-share="fb" title="페이스북으로 공유" aria-label="페이스북으로 공유"></button></li>
+  <li><button type="button" class="icon-hk-sns-twitter" data-share="twt" title="X로 공유" aria-label="X로 공유"></button></li>
+  <li><button type="button" class="icon-hk-sns-kakao" data-share="kkt" title="카카오톡으로 공유" aria-label="카카오톡으로 공유"></button></li>
+  <li><button type="button" class="icon-hk-sns-link" data-share="url" title="URL 복사" aria-label="URL 복사"></button></li>
+</ul>
+
+<script is:inline>
+  // 상단 인터랙티브 헤더(header.js)의 공유와 똑같이 동작한다 — 주소·제목·설명·이미지를 같은 곳에서 읽는다.
+  //   주소: 현재 페이지 origin + pathname (쿼리·해시 제외). URL 복사만 location.href 전체
+  //   제목·설명·카카오 이미지: <head> 의 og:title · og:description · kakao_og_image 메타 (5장 Layout)
+  //   앱 웹뷰(window.ReactNativeWebView): 카카오만 앱으로 넘긴다. 페이스북·X 는 새 창
+  //   카카오는 SDK v2(Kakao.Share). hkFunc.js 의 Kakao.Link(v1)는 v2 에서 undefined 라 쓰지 않는다
+  (function () {
+    var meta = function (selector) {
+      var el = document.querySelector(selector);
+      return (el && el.getAttribute("content")) || "";
+    };
+
+    function shareKakao(url) {
+      var title = meta('meta[property="og:title"]') || document.title;
+      var description = meta('meta[property="og:description"]') || meta('meta[name="description"]');
+      var imageUrl = meta('meta[name="kakao_og_image"]') || meta('meta[property="og:image"]');
+      if (window.ReactNativeWebView) {
+        window.ReactNativeWebView.postMessage(
+          JSON.stringify({ type: "KAKAO_SHARE", title: title, description: description, url: url, imageUrl: imageUrl })
+        );
+        return;
+      }
+      // Kakao.Share 는 init 뒤에 생긴다 — 존재 확인보다 init 이 먼저
+      if (window.Kakao && !window.Kakao.isInitialized()) window.Kakao.init("e62df5186f0758def8f14c53e64d7b9d");
+      if (!window.Kakao || !window.Kakao.Share) {
+        alert("카카오 공유를 사용할 수 없습니다.");
+        return;
+      }
+      try {
+        window.Kakao.Share.sendDefault({
+          objectType: "feed",
+          content: { title: title, description: description, imageUrl: imageUrl, link: { mobileWebUrl: url, webUrl: url } },
+          buttons: [{ title: "자세히 보기", link: { mobileWebUrl: url, webUrl: url } }],
+        });
+      } catch (e) {
+        alert("카카오 공유를 사용할 수 없습니다.");
+      }
+    }
+
+    function copyUrl() {
+      var text = location.href;
+      var done = function () { alert("주소가 복사되었습니다."); };
+      var fail = function () { alert("복사 실패!"); };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, fail);
+      else fail();
+    }
+
+    document.querySelectorAll("[data-share]").forEach(function (button) {
+      button.addEventListener("click", function (event) {
+        event.preventDefault();
+        var url = location.origin + location.pathname;
+        var sns = button.dataset.share;
+        if (sns === "fb") window.open("https://www.facebook.com/sharer/sharer.php?u=" + encodeURIComponent(url), "_blank");
+        else if (sns === "twt") window.open("https://twitter.com/intent/tweet?text=" + encodeURIComponent(document.title) + "%20" + encodeURIComponent(url), "_blank");
+        else if (sns === "kkt") shareKakao(url);
+        else if (sns === "url") copyUrl();
+      });
+    });
+  })();
+</script>
+```
+
 
 ---
 
@@ -808,7 +903,7 @@ $tablet-ratio: math.div($tablet-width, 100)
 
 ### 웹폰트 — 사내 CDN 사용 (`_fonts.scss` 없음)
 
-폰트 파일을 저장소나 `public/fonts/`에 두지 않는다. `Layout.astro` `<head>`에서
+폰트 파일을 저장소나 `public/fonts/`에 두지 않는다 (**예외: 아이콘 폰트 `public/addon/icon_font/`** — 11장). `Layout.astro` `<head>`에서
 사내 CDN의 `https://assets.hankookilbo.com/fonts/hk_fonts.css`를 링크하면 아래
 서체가 제공된다 (5장 Layout 원문 참고).
 
@@ -931,6 +1026,33 @@ body.loading interactive-header
       display: inline-block;
       margin: 0;
       @include byline-font;
+    }
+  }
+
+  // 공유 4종 (ShareLinks.astro). 아이콘은 iconFont.css 의 icon-hk-sns-* 클래스
+  .share-tools {
+    margin: 42px 0 40px;
+    padding-left: 0;
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    list-style: none;
+
+    li {
+      margin: 0;
+    }
+    button {
+      display: block;
+      padding: 0;
+      font-size: 40px;
+      line-height: 1;
+      border: 0;
+      background: none;
+      color: $fontColBase;
+      cursor: pointer;
+    }
+    @include mobile {
+      margin: 30px 0;
     }
   }
 
@@ -1352,12 +1474,16 @@ three.js / react-three-fiber는 반드시 `client:only="react"`로 마운트한�
 | `img/ogimage_kakao.png`              | 800 × 800  | 카카오톡 공유 카드 (`kakao_og_image` 메타가 가리킴). **필수** — 크기 검사 동일 |
 | `img/common/full_loader_bg.png`      |            | 로더 배경 (스킬 `assets/common/`에서 복사)          |
 | `img/common/full_loader_spinner.png` | 204 × 202  | 로더 스피너 (스킬 `assets/common/`에서 복사)        |
+| `addon/icon_font/iconFont.css` + `fonts/hk.woff·ttf` | | 아이콘 폰트 (스킬 `assets/addon/icon_font/`에서 복사). 바이라인 공유 4종·로고 아이콘 |
 | `favicon.svg`                        |            | 실제 파비콘은 Layout에서 CDN 사용                   |
 
 `img/common/`의 로더 이미지 2개는 스킬의 `assets/common/`에 있는 실제 파일을 그대로 복사한다. 새로 만들 필요 없다.
+`addon/icon_font/`도 스킬의 `assets/addon/icon_font/`를 폴더째 복사한다(`cp -r assets/addon <프로젝트>/public/`). 원본은
+`https://interactive.hankookilbo.com/addon/icon_font/`인데, 그 서버가 다른 출처에 CORS를 허용하지 않아 CDN 주소로 링크하면 로컬(`localhost:3000`)에서
+아이콘이 빈 네모로 보인다. 프로젝트 안에 두면 페이지와 같은 출처라 로컬·운영 모두 뜬다.
 
 공유 이미지 2장은 **프로젝트마다 새로 만들어 올린다.** 담당자가 주지 않으면 대표 사진으로 만들어 승인받는다. 템플릿 자리 이미지인 채로, 또는 크기가 다른 채로 두면 `self_check.js`가 실패 처리하고 배포하지 않는다. 형식은 PNG, 크기는 정확히 1200×630 / 800×800.
-**`public/fonts/` 폴더는 만들지 않는다.** 폰트는 CDN에서 온다 (7장 웹폰트).
+**`public/fonts/` 폴더는 만들지 않는다.** 웹폰트는 CDN에서 온다 (7장 웹폰트). 프로젝트에 두는 폰트 파일은 아이콘 폰트(`public/addon/icon_font/fonts/hk.*`) 하나뿐이다.
 
 이미지 최적화 기준:
 
@@ -1437,7 +1563,7 @@ three.js / react-three-fiber는 반드시 `client:only="react"`로 마운트한�
 - 자체 헤더(구 ArticleBar 등) 추가, `<interactive-header>` 숨김·이동. 헤더는 임베드 스크립트가 붙이는 것 하나만 쓴다.
   (예외: 로딩 화면이 떠 있는 동안만 `body.loading interactive-header { opacity: 0 !important; pointer-events: none !important }` — 0-1장 "헤더", 7장 `_full_loader.sass`)
 - 카카오 SDK v1(`developers.kakao.com/sdk/js/kakao.min.js`) 로드. 인터랙티브 헤더의 v2와 충돌해 공유가 깨진다.
-- `public/fonts/` 폴더, 폰트 파일(woff/woff2/ttf/otf/eot) 커밋, `@font-face` 직접 선언. 폰트는 `hk_fonts.css`(CDN)만 쓴다.
+- `public/fonts/` 폴더, 폰트 파일(woff/woff2/ttf/otf/eot) 커밋, `@font-face` 직접 선언. 웹폰트는 `hk_fonts.css`(CDN)만 쓴다. 예외는 스킬이 주는 아이콘 폰트(`public/addon/icon_font/`)뿐이고, 그 안의 파일은 고치지 않는다.
 
 ---
 
@@ -1481,7 +1607,8 @@ npm run preview
 [ ] dist/index.html 에 interactive-embed.js?Nid=<ARTICLE_KEY> 포함 (대문자 N, 값이 META.ts와 동일)
 [ ] 임베드 스크립트에 data-scroll-container=".body-wrapper" 포함 (헤더 숨김·추천 카드가 .body-wrapper 스크롤을 따라간다)
 [ ] dist/index.html 에 assets.hankookilbo.com/fonts/hk_fonts.css 포함
-[ ] dist/ 안에 폰트 파일(woff/woff2/ttf) 없음
+[ ] dist/ 안에 폰트 파일(woff/woff2/ttf) 없음 — 예외: dist/addon/icon_font/fonts/hk.* (아이콘 폰트)
+[ ] 바이라인 공유 아이콘 4종이 로컬(localhost:3000)에서도 그림으로 보임 (빈 네모면 iconFont.css 를 CDN 주소로 링크한 것)
 [ ] 인터랙티브 헤더(<interactive-header>)가 body 맨 앞에 뜸 (임베드 스크립트가 붙임, 자체 헤더 없음)
 [ ] 로딩 화면(스피너)이 떠 있는 동안 헤더가 보이지 않고, 로더가 걷힌 뒤 헤더가 나타남 (_full_loader.sass의 body.loading interactive-header { opacity: 0 !important } 규칙)
 [ ] <html>의 dark 클래스가 페이지 배경과 맞음 (어두운 배경 = class="dark") — 헤더 로고가 배경 위에서 보임
@@ -1495,8 +1622,9 @@ npm run preview
 [ ] public/img/ogimage.png (1200x630), public/img/ogimage_kakao.png (800x800) 업로드, 빌드 후 dist/img/ 에도 복사됨 — self_check.js 크기 검사 통과
 [ ] dist/index.html 에 og:locale ko_KR, og:image:width/height 1200/630, twitter:image:width/height 1200/630 포함
 [ ] <title> "제목 | 한국일보" 확인
-[ ] 인터랙티브 헤더 공유 4종 (페북, X, 카카오, URL 복사) 동작 — 카카오 카드에 ogimage_kakao.png가 뜸. 바이라인에 공유 버튼 없음
-[ ] 바이라인 제작진, 게시일, 맨 끝 저작권 문구 (관련 기사 카드·공유 버튼 없음)
+[ ] 인터랙티브 헤더 공유 4종 (페북, X, 카카오, URL 복사) 동작 — 카카오 카드에 ogimage_kakao.png가 뜸
+[ ] 바이라인 공유 4종 (페북, X, 카카오, URL 복사) 동작 — 헤더 공유와 같은 카드가 뜸. URL 복사는 "주소가 복사되었습니다." 알림이 뜸. 헤더 공유와 같은 주소·카드. dist/index.html 에 Kakao.Link 없음(v1 API)
+[ ] 바이라인 제작진, 게시일, 공유 4종, 맨 끝 저작권 문구 (관련 기사 카드 없음)
 [ ] 인터랙티브 헤더(<interactive-header>)가 body 맨 앞에 뜨고, 스크롤 후 하단 추천 카드가 뜸 (자기 기사는 추천에 없음)
 [ ] 모바일 크롬, 사파리, 카카오톡 인앱, 네이버 인앱에서 스크롤 확인
 [ ] iOS 사파리 하단 주소창 겹침 없음

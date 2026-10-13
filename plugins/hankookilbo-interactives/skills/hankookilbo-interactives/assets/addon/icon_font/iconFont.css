@@ -1,0 +1,48 @@
+@font-face {
+  font-family: 'hk';
+  src:  url('fonts/hk.woff?dm5dnf') format('woff'),
+    url('fonts/hk.ttf?dm5dnf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+
+[class^="icon-hk-"], [class*=" icon-hk-"] {
+  /* use !important to prevent issues with browser extensions that change fonts */
+  font-family: 'hk' !important;
+  speak: never;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+
+  /* Better Font Rendering =========== */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.icon-hk-logo_square:before {
+  content: "\e905";
+}
+.icon-hk-sns-share:before {
+  content: "\e906";
+}
+.icon-hk-sns-link:before {
+  content: "\e907";
+}
+.icon-hk-logo_vertical:before {
+  content: "\e904";
+}
+.icon-hk-sns-naver-blog:before {
+  content: "\e900";
+}
+.icon-hk-sns-twitter:before {
+  content: "\e901";
+}
+.icon-hk-sns-facebook:before {
+  content: "\e902";
+}
+.icon-hk-sns-kakao:before {
+  content: "\e903";
+}

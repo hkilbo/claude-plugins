@@ -15,6 +15,10 @@
       ├── full_loader_bg.png           한국일보 인터랙티브 로딩 화면 배경
       └── full_loader_spinner.png      한국일보 인터랙티브 로딩 스피너
 
+    plugins/hankookilbo-interactives/skills/hankookilbo-interactives/assets/addon/icon_font/
+      ├── iconFont.css                 한국일보 아이콘 폰트 스타일
+      └── fonts/hk.{woff,ttf}       한국일보 아이콘 폰트 (로고·SNS 아이콘 포함)
+
 또한 각 스킬 문서에 기술된 색상 값·타이포그래피·레이아웃 규격은 한국일보의
 공식 디자인 시스템을 문서화한 것입니다.
 
