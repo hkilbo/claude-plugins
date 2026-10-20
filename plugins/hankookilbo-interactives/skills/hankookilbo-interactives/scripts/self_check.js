@@ -15,12 +15,16 @@
 const fs = require("fs");
 const path = require("path");
 
+// 인터랙티브 임베드(헤더·추천 카드) CDN 호스트. 템플릿 0-1장과 같은 값이어야 한다.
+// TODO(release): v2 운영 승격 후 "assets.hankookilbo.com" 으로 바꾼다
+const WC_CDN_HOST = "assets-dev.hankookilbo.com";
+
 // hk-interactive-template.md 0-1장 "빌드 후 자동 검증"과 동일한 목록
 const REQUIRED_DIST_KEYS = [
   "G-HR08PM6YWZ", // GA4 — 이 스트림 하나로 통일 (개편 전 GTM/UA/다른 G-* 금지, 아래 1-0 검사)
   "code.jquery.com/jquery-3.7.1.min.js", // hkAnalTag_hub.js 가 $ 를 쓴다 — 통계 스크립트보다 앞 (아래 1-0b 순서 검사)
   "www.hankookilbo.com/Inc/Js/hkAnalTag_hub.js", // 한국일보 통계 (Hmap 1.0), www 절대 경로
-  "components/interactive-embed/v1/interactive-embed.js?Nid=", // 인터랙티브 임베드 (Nid 대문자 N)
+  "components/interactive-embed/v2/interactive-embed.js?Nid=", // 인터랙티브 임베드 v2 (Nid 대문자 N). v1 은 <html data-*> 를 읽지 않는다
   "addon/icon_font/iconFont.css", // 아이콘 폰트 — public/addon/icon_font/ 상대 경로 (아래 4-1 검사)
   "assets.hankookilbo.com/fonts/hk_fonts.css", // 웹폰트 CDN (템플릿 7장)
   "t1.kakaocdn.net/kakao_js_sdk/2.7.6/kakao.min.js", // 카카오 SDK v2 (인터랙티브 헤더와 동일 버전)
@@ -33,6 +37,11 @@ const REQUIRED_DIST_KEYS = [
   "share-tools", // 바이라인 공유 4종 (ShareLinks.astro)
   "body-wrapper",
   "full-loader",
+  "data-flow", // 공통영역 API 5종 — 값 검사는 아래 1-1b
+  "data-view",
+  "data-state",
+  "data-gnb",
+  "data-theme",
   "Copyright © Hankookilbo", // 바이라인 맨 끝 저작권 문구 (공통 푸터를 쓰지 않으므로 필수)
 ];
 
@@ -172,30 +181,43 @@ if (fs.existsSync(distIndex) && fs.existsSync(metaPathForNid)) {
   }
 }
 
-// 1-1b. 임베드 스크립트에 data-scroll-container=".body-wrapper"가 있는지
-// 없으면 헤더가 .body-wrapper 스크롤을 따라 숨지 않고, 추천 카드가 본문 끝에서 뜨지 않는다
-// 빌드 압축으로 따옴표가 빠질 수 있어 문자열 목록(REQUIRED_DIST_KEYS)이 아니라 정규식으로 본다
+// 1-1b. 공통영역 API: <html> 에 data-flow / data-view / data-state="intro" / data-gnb="transparent" / data-theme 가 허용값으로 있는지 (템플릿 0-1장)
+// 압축기가 따옴표를 뺄 수 있어 태그를 읽어 속성별로 본다. 이 값이 없으면 헤더는 기본값(투명 고정)으로만 서고 추천 카드는 안 뜬다
+const HTML_ATTRS = {
+  "data-flow": ["scroll", "game"],
+  "data-view": ["normal", "mobile"],
+  "data-state": ["intro"],
+  "data-gnb": ["transparent"],
+  "data-theme": ["light", "dark"],
+};
+let htmlDataset = {};
 if (fs.existsSync(distIndex)) {
   const html = fs.readFileSync(distIndex, "utf-8");
-  const embedTag = (html.match(/<script\b[^>]*interactive-embed\.js[^>]*>/i) || [])[0];
-  if (embedTag) {
-    const ok = /\bdata-scroll-container=(["']?)\.body-wrapper\1(?=[\s>])/i.test(embedTag);
-    check("인터랙티브 임베드 data-scroll-container", ok ? "pass" : "fail",
-      ok ? ".body-wrapper"
-        : '임베드 스크립트에 data-scroll-container=".body-wrapper"가 없거나 값이 다릅니다. Layout.astro의 interactive-embed.js <script>에 그대로 붙이세요.');
+  const htmlTag = (html.match(/<html\b[^>]*>/i) || [""])[0];
+  const bad = [];
+  for (const [attr, allowed] of Object.entries(HTML_ATTRS)) {
+    const v = (htmlTag.match(new RegExp(`\\b${attr}=["']?([^"'\\s>]*)`, "i")) || [])[1];
+    htmlDataset[attr] = v;
+    if (v === undefined) bad.push(`${attr} 없음`);
+    else if (!allowed.includes(v)) bad.push(`${attr}="${v}" (허용: ${allowed.join("|")})`);
   }
+  check("공통영역 API <html data-*> 5종", bad.length ? "fail" : "pass",
+    bad.length
+      ? `${bad.join(", ")} — Layout.astro 의 <html> 에 data-flow={FLOW} data-view={VIEW} data-state="intro" data-gnb="transparent" data-theme={THEME} 를 선언하세요 (템플릿 5장).`
+      : Object.entries(htmlDataset).map(([k, v]) => `${k.slice(5)}=${v}`).join(" "));
 }
 
-// 1-1c. CDN은 운영(assets.hankookilbo.com)만. dev·stg 주소가 남아 있으면 배포 페이지가 개발 서버를 부른다
+// 1-1c. 임베드 CDN 호스트는 WC_CDN_HOST 하나만. 다른 환경 주소가 섞이면 배포 페이지가 엉뚱한 서버를 부른다
 if (fs.existsSync(distIndex)) {
   const html = fs.readFileSync(distIndex, "utf-8");
-  const nonProd = [...new Set(html.match(/assets-(?:dev|stg)\.hankookilbo\.com[^"'\s>]*/g) || [])];
-  check("CDN 운영 주소만 사용 (assets-dev/stg 없음)", nonProd.length ? "fail" : "pass",
-    nonProd.length ? `개발·스테이징 CDN 주소가 있습니다: ${nonProd.join(", ")} — https://assets.hankookilbo.com 으로 바꾸세요 (템플릿 0-1장).` : "");
+  const hosts = [...new Set((html.match(/assets(?:-dev|-stg)?\.hankookilbo\.com(?=\/components\/)/g) || []))];
+  const wrong = hosts.filter((h) => h !== WC_CDN_HOST);
+  check(`임베드 CDN 호스트 = ${WC_CDN_HOST}`, wrong.length ? "fail" : "pass",
+    wrong.length ? `다른 CDN 주소가 있습니다: ${wrong.join(", ")} — https://${WC_CDN_HOST} 로 바꾸세요 (템플릿 0-1장).` : "");
 }
 
-// 1-2. 테마: <html>의 dark 클래스가 페이지 배경($bgBase) 밝기와 맞는지 (템플릿 0-1장 "테마")
-// 어긋나면 인터랙티브 헤더 로고가 배경과 같은 색이 돼 안 보인다
+// 1-2. 테마: <html data-theme> · class="dark" 유무 · 페이지 배경($bgBase) 밝기 셋이 같은 쪽인지 (템플릿 0-1장 "공통영역 API")
+// 소스는 META.ts 의 THEME 하나다. 어긋나면 코드 오류이고, 헤더 로고가 배경과 같은 색이 돼 안 보인다
 const DARK_BG_LUMINANCE_MAX = 0.5; // 0(검정) ~ 1(흰색). 이보다 어두우면 다크 배경으로 본다
 const variablesPath = path.join(rootDir, "src", "styles", "_variables.sass");
 if (fs.existsSync(distIndex) && fs.existsSync(variablesPath)) {
@@ -203,6 +225,7 @@ if (fs.existsSync(distIndex) && fs.existsSync(variablesPath)) {
   const htmlTag = (html.match(/<html\b[^>]*>/i) || [""])[0];
   const htmlClass = (htmlTag.match(/\bclass=["']?([^"'>]*)/i) || [])[1] || "";
   const hasDark = /(^|\s)dark(\s|$)/.test(htmlClass);
+  const themeAttr = htmlDataset["data-theme"];
   const bgHex = (fs.readFileSync(variablesPath, "utf-8").match(/\$bgBase:\s*#([0-9a-f]{3}|[0-9a-f]{6})\b/i) || [])[1];
   if (!bgHex) {
     check("테마(<html class=\"dark\">)와 배경색 일치", "warn", "_variables.sass에서 $bgBase(#hex)를 읽지 못해 확인을 건너뜀. 배경이 어두우면 <html class=\"dark\">인지 직접 확인하세요.");
@@ -210,12 +233,32 @@ if (fs.existsSync(distIndex) && fs.existsSync(variablesPath)) {
     const full = bgHex.length === 3 ? bgHex.split("").map((c) => c + c).join("") : bgHex;
     const [r, g, b] = [0, 2, 4].map((i) => parseInt(full.slice(i, i + 2), 16) / 255);
     const bgIsDark = 0.2126 * r + 0.7152 * g + 0.0722 * b < DARK_BG_LUMINANCE_MAX;
-    const ok = bgIsDark === hasDark;
-    check("테마(<html class=\"dark\">)와 배경색 일치", ok ? "pass" : "warn",
-      ok ? `$bgBase #${bgHex} → ${hasDark ? "dark" : "light"}`
-        : bgIsDark
-          ? `$bgBase #${bgHex}는 어두운데 <html>에 class="dark"가 없습니다. 헤더 로고가 검은색이라 안 보입니다. Layout.astro의 <html>에 class="dark"를 넣으세요.`
-          : `$bgBase #${bgHex}는 밝은데 <html>에 class="dark"가 있습니다. 헤더 로고가 흰색이라 안 보입니다. class="dark"를 빼세요.`);
+    const themeIsDark = themeAttr === "dark";
+    const ok = bgIsDark === hasDark && bgIsDark === themeIsDark;
+    check("테마(data-theme · class=\"dark\" · $bgBase) 일치", ok ? "pass" : "fail",
+      ok ? `$bgBase #${bgHex} → ${themeAttr}`
+        : `$bgBase #${bgHex}(${bgIsDark ? "어두움" : "밝음"}), data-theme="${themeAttr || "없음"}", class="dark" ${hasDark ? "있음" : "없음"} — 셋이 다릅니다. META.ts 의 THEME 을 배경에 맞추세요 (Layout 이 data-theme 과 class 를 THEME 에서 만듭니다).`);
+  }
+}
+
+// 1-2b. 형식별 배선: 스크롤형은 Layout 이 wireScrollFlow() 를, 게임형은 화면 전환이 setCommon({state:"credits"}) 를 써야 추천 카드가 뜬다 (템플릿 8장·10장 패턴 E)
+{
+  const layoutPath = path.join(rootDir, "src", "layouts", "Layout.astro");
+  const flow = htmlDataset["data-flow"];
+  if (flow && fs.existsSync(layoutPath)) {
+    const layout = fs.readFileSync(layoutPath, "utf-8");
+    const hasWire = /wireScrollFlow\s*\(/.test(layout);
+    if (flow === "scroll") {
+      check("스크롤형 배선 (Layout wireScrollFlow)", hasWire ? "pass" : "fail",
+        hasWire ? "" : 'Layout.astro 에 `if (FLOW === "scroll") wireScrollFlow();` 가 없습니다. 내려도 GNB 가 안 숨고 추천 카드가 안 뜹니다 (템플릿 5장·8장).');
+    } else {
+      const srcFiles = [];
+      const walk = (dir) => { for (const f of fs.readdirSync(dir)) { const p = path.join(dir, f); fs.statSync(p).isDirectory() ? walk(p) : /\.(astro|tsx?|jsx?)$/.test(f) && srcFiles.push(p); } };
+      walk(path.join(rootDir, "src"));
+      const hasCredits = srcFiles.some((f) => { const t = fs.readFileSync(f, "utf-8"); return /setCommon\s*\(/.test(t) && /["']credits["']/.test(t); });
+      check("게임형 배선 (setCommon credits)", hasCredits ? "pass" : "fail",
+        hasCredits ? "" : '끝 화면 전환에 `setCommon({ state: "credits", gnb: "transparent" })` 가 없습니다. 추천 카드가 영영 안 뜹니다 (템플릿 10장 패턴 E).');
+    }
   }
 }
 

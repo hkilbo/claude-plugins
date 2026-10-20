@@ -14,6 +14,10 @@ document.documentElement.scrollTop;          // 항상 0
 - GSAP ScrollTrigger는 기본 `scroller`가 `window`이므로 **반드시 `.body-wrapper`로 바꿔야** 한다.
 - `position: sticky`는 `.body-wrapper` 안에서 정상 동작한다.
 
+## 0-1. 헤더·추천 카드(공통영역)는 건드리지 않는다
+
+GNB 숨김/바탕과 추천 카드 노출은 템플릿의 `src/lib/js/_comm/hkCommon.js`가 `<html data-*>`로 정한다 (`wireScrollFlow`, 스크롤형은 Layout이 자동 호출). 콘텐츠 스크롤 코드(IO·ScrollTrigger)에서 `document.documentElement.dataset.gnb`를 쓰거나 `interactive-header`를 CSS로 건드리지 않는다. 60% 같은 기준을 바꾸고 싶으면 `wireScrollFlow({ ratio })` 인자만 바꾼다.
+
 ## 1. 1단계: IntersectionObserver만으로 해결되는 경우
 
 챕터 전환, 배경 교체, 진입 시 클래스 토글은 GSAP 없이 만든다. `position: sticky` 배경 + `100vh` 섹션 + IO가 기본 구조다.

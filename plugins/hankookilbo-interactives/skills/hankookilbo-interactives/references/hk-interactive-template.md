@@ -62,6 +62,7 @@ AI가 작업 중 반드시 지켜야 하는 최상위 규칙 3가지:
 전부 그 안에 들어 있다.
 
 - 프로젝트에 `article_bar.astro` 같은 자체 헤더를 만들지 않는다. 헤더가 두 개가 된다.
+- 헤더가 언제 숨고 언제 바탕을 까는지는 **프로젝트가 `<html data-gnb>`로 정한다**(아래 "공통영역 API"). 스크롤형은 `hkCommon.wireScrollFlow()`가, 게임형은 화면 전환 코드가 쓴다. 헤더 자체는 스크롤을 읽지 않는다.
 - `<interactive-header>`를 CSS로 숨기거나 위치를 옮기지 않는다. **유일한 예외는 초기 로딩 화면(`body.loading`)이 떠 있는 동안**이다.
   헤더는 `.body-wrapper` 밖에 `position: fixed; z-index: 650`으로 붙고 `.body-wrapper`(`position: fixed`)는 별도 stacking context라,
   로더(`.full-loader`)의 `z-index: 3000`으로는 헤더를 덮을 수 없다. 그래서 `_full_loader.sass`에
@@ -73,19 +74,36 @@ AI가 작업 중 반드시 지켜야 하는 최상위 규칙 3가지:
 - 카카오 공유는 헤더가 카카오 SDK **v2**(`t1.kakaocdn.net/kakao_js_sdk/2.7.6`)로 처리한다. 프로젝트가 v1
   (`developers.kakao.com/sdk/js/kakao.min.js`)을 먼저 로드하면 헤더가 v2 로드를 건너뛰고 공유가 실패하므로 v1은 금지다.
 
-### 테마 (라이트 / 다크) — `<html class="dark">`
+### 공통영역 API — `<html data-*>` (헤더 · 추천 카드 v2)
 
-인터랙티브 헤더와 추천 카드는 `<html>`에 `dark` 클래스가 있는지 보고 테마를 정한다. 페이지 배경색과 반드시 맞춘다.
+인터랙티브 헤더와 추천 카드는 **`<html>`의 `data-*` 속성만 읽는다.** 스크롤·타이머·창 폭·브라우저 테마를 스스로 보지 않는다. 언제 GNB를 숨기고 언제 추천 카드를 띄울지는 프로젝트(호스트)가 속성을 바꿔서 정한다. 단일 상태 소스다.
 
-| 페이지 배경 | `<html>` | 헤더·추천 카드 |
+| `<html>` 속성 | 값 | 없을 때 | 의미 |
+| --- | --- | --- | --- |
+| `data-flow` | `game` \| `scroll` | `scroll` | 인터랙티브 형태. `META.ts`의 `FLOW`. 표기용 — 헤더 동작은 이 값으로 갈리지 않는다 |
+| `data-view` | `mobile` \| `normal` | `normal` | 뷰포트 형식. `META.ts`의 `VIEW`. `mobile`이면 폭 690 이상에서 GNB가 떠 있는 휴대폰 화면 바깥에 항상 보인다 |
+| `data-state` | `intro` \| `play` \| `credits` | `intro` | 진행 단계. **추천 카드는 `credits`에서만 뜬다** |
+| `data-gnb` | `transparent` \| `solid` \| `hidden` \| `menu` | `transparent` | GNB 상태. `menu` = GNB 숨김 + 왼쪽 위 로고 버튼(누르면 GNB가 내려옴). `hidden` = 버튼 없이 숨김만 |
+| `data-theme` | `light` \| `dark` | `html.dark` 클래스 → 없으면 `light` | `META.ts`의 `THEME`. 투명 GNB면 아이콘 색, solid면 바탕 + 아이콘 색, 추천 카드 색 |
+
+- 초기값은 `Layout.astro`의 `<html>`에 선언한다(5장). 진행 중 변경은 `src/lib/js/_comm/hkCommon.js`의 `setCommon()`으로 한다(8장).
+- `class="dark"`는 `THEME === "dark"`일 때 `data-theme`과 **함께** 둔다. 구 CDN 호환용이며 Layout이 자동으로 만든다. 둘이 어긋나게 직접 쓰지 않는다.
+- `_variables.sass`의 `$bgBase`는 `THEME`과 맞춘다(어두운 배경 = `dark`). 어긋나면 헤더 로고가 배경과 같은 색이 돼 안 보인다. `self_check.js`가 셋의 일치를 검사한다.
+- 라이트와 다크 중 하나로 고정한다. 페이지 안에서 바꾸는 전환 기능은 만들지 않는다. 예외는 **모바일뷰·게임형의 PC**뿐이다(10장 패턴 F `syncOuterTheme`).
+
+헤더·카드가 프로젝트에 알려 주는 이벤트(`document`에 `CustomEvent`):
+
+| 이벤트 | `detail` | 시점 |
 | --- | --- | --- |
-| 어두움 (템플릿 기본 `$bgBase: #111`) | `<html lang="ko" class="dark">` | 흰 로고·아이콘, 어두운 카드 |
-| 밝음 | `<html lang="ko">` (클래스 없음) | 검은 로고·아이콘, 흰 카드 |
+| `hk-interactive-menu` | `{ open: boolean }` | `data-gnb="menu"`에서 로고 버튼·✕·Esc로 GNB를 열고 닫을 때. `open`이면 게임 시계를 멈춘다 |
+| `hk-interactive-recommend` | `{ state: "shown" \| "dismissed" }` | 추천 카드 노출 / 닫기 |
 
-- 템플릿 기본값은 다크다. 5장 Layout 원문에 `class="dark"`가 들어 있다. 밝은 배경으로 바꾸면 `_variables.sass`의 `$bgBase`·`$fontColBase`와 함께 이 클래스를 뺀다.
-- 둘이 어긋나면 헤더 로고가 배경과 같은 색이 돼 안 보인다 (어두운 배경 + 클래스 없음 = 검은 로고).
-- 라이트와 다크 중 하나로 고정한다. 페이지 안에서 테마를 바꾸는 전환 기능은 만들지 않는다.
-- `dark` 이외의 이름(`theme-dark`, `data-theme` 등)은 헤더가 읽지 않는다. `<body>`에 붙여도 안 된다.
+형식별로 언제 어떤 값을 쓰는지는 10장 패턴 B(스크롤형)·E(게임형)·F(모바일뷰)에 있다. 요약:
+
+| 형식 | 초기화면 | 진행 중 | 끝(크레딧) |
+| --- | --- | --- | --- |
+| 스크롤형 (`wireScrollFlow`가 자동) | `state=intro gnb=transparent` | 내리면 `gnb=hidden`, 올리면 `gnb=solid`, `state=play` | 바이라인이 화면 60%에 닿으면 `state=credits gnb=transparent` |
+| 게임형 (화면 전환마다 `setCommon`) | `state=intro gnb=transparent` | `state=play gnb=menu` | `state=credits gnb=transparent` |
 
 ### 바이라인 (콘텐츠 크레딧)
 
@@ -110,7 +128,7 @@ AI가 작업 중 반드시 지켜야 하는 최상위 규칙 3가지:
 | jQuery                                          | `hkAnalTag_hub.js`가 `$`를 쓴다. **통계 스크립트보다 앞에** 로드한다 (뒤에 두면 `$ is not defined`로 Hmap 수집이 안 된다) | `https://code.jquery.com/jquery-3.7.1.min.js`                                                                                  |
 | 한국일보 통계 (Hmap 1.0)                        | `hkAnalTag_hub.js` — www 절대 경로, jQuery 다음. `hkFunc.js`는 쓰지 않는다                   | `https://www.hankookilbo.com/Inc/Js/hkAnalTag_hub.js`                                                                          |
 | 한국일보 통계 메타                              | `hk:nw_newsid`, `hk:nw_press`, `hk:nw_presscode`, `hk:nw_title`, `hk:nw_pagecode`           | META.ts에서 주입                                                                                                               |
-| 인터랙티브 임베드 (헤더 웹컴포넌트 + 추천 카드) | `interactive-embed.js?Nid={ARTICLE_KEY}` + `data-scroll-container=".body-wrapper"` — 사내 CDN, `Nid`는 대문자 N | `https://assets.hankookilbo.com/components/interactive-embed/v1/interactive-embed.js`                                          |
+| 인터랙티브 임베드 v2 (헤더 웹컴포넌트 + 추천 카드) | `interactive-embed.js?Nid={ARTICLE_KEY}` — 사내 CDN, `Nid`는 대문자 N. 동작은 `<html data-*>`로 정한다(위 "공통영역 API") | `https://assets-dev.hankookilbo.com/components/interactive-embed/v2/interactive-embed.js`                                          |
 | 카카오 SDK **v2**                               | `t1.kakaocdn.net/kakao_js_sdk/2.7.6/kakao.min.js` + `Kakao.init(...)` (초기화 여부 확인 후) | 앱키 `e62df5186f0758def8f14c53e64d7b9d`. 인터랙티브 헤더가 같은 v2를 쓴다. v1(`developers.kakao.com/sdk/js/kakao.min.js`) 금지 |
 | 아이콘 폰트                                     | `iconFont.css` + `fonts/hk.*` — 스킬 `assets/addon/icon_font/`를 `public/addon/icon_font/`로 복사해 **상대 경로**로 링크. CDN 주소를 쓰면 로컬에서 CORS로 아이콘이 안 뜬다 | `./addon/icon_font/iconFont.css`                                                                                               |
 | 웹폰트 (Pretendard Variable, NanumMyeongjo)     | `hk_fonts.css` — 사내 CDN, 폰트 파일을 저장소에 두지 않는다                                 | `https://assets.hankookilbo.com/fonts/hk_fonts.css`                                                                            |
@@ -125,7 +143,7 @@ AI가 작업 중 반드시 지켜야 하는 최상위 규칙 3가지:
 스크립트 한 줄로 붙이는 로더다. 구 `hkUtilMoreInteractive.min.js`(더보기 위젯)를 대체한다.
 
 ```html
-<script is:inline src={`https://assets.hankookilbo.com/components/interactive-embed/v1/interactive-embed.js?Nid=${ARTICLE_KEY}`} data-scroll-container=".body-wrapper"></script>
+<script is:inline src={`https://assets-dev.hankookilbo.com/components/interactive-embed/v2/interactive-embed.js?Nid=${ARTICLE_KEY}`}></script>
 ```
 
 - **`Nid=기사ID`는 필수**다. 값은 `META.ts`의 `ARTICLE_KEY`(A + 19자리)를 그대로 넣는다. 파라미터 이름은
@@ -133,10 +151,10 @@ AI가 작업 중 반드시 지켜야 하는 최상위 규칙 3가지:
 - 이 스크립트가 하는 일: ① 헤더 프래그먼트(`interactive-header.html`)를 받아 `<interactive-header>`를
   `body` 맨 앞에 붙이고 `header.js`로 살린다 ② `Nid`가 있으면 `interactive-recommend.js?Nid=…`를 로드해
   화면 하단 추천 카드를 띄운다. 추천 후보에서 **현재 기사(`Nid`)를 제외**하므로 값이 틀리면 자기 기사가 추천에 뜬다.
-- **`data-scroll-container=".body-wrapper"`는 필수**다. 값도 이대로 고정이다. 이 속성이 있어야 헤더가 `.body-wrapper` 스크롤을 따라 숨고, 추천 카드가 본문 끝에서 뜬다.
-- **CDN은 운영 주소 `https://assets.hankookilbo.com` 하나만 쓴다.** `assets-dev.`, `assets-stg.` 주소는 로컬 테스트용으로도 소스에 남기지 않는다 (`self_check.js`가 실패 처리).
+- `data-scroll-container`는 **쓰지 않는다**(v1 전용이었다). v2 헤더·카드는 스크롤을 읽지 않고 `<html data-*>`만 본다.
+- **CDN 주소는 `https://assets-dev.hankookilbo.com` 한 곳만 쓴다.** 다른 환경 주소를 섞지 않는다 (`self_check.js`가 검사). <!-- TODO(release): v2 운영 승격 후 assets.hankookilbo.com 으로 교체 -->
 - 추천 카드만 끄려면 `<script … data-recommend="false">`. 헤더는 끌 수 없다.
-- `v1` 별칭 경로라 프론트개발팀이 새 버전을 승격해도 소비 코드는 바뀌지 않는다. 버전을 고정하지 않는다.
+- `v2` 별칭 경로라 프론트개발팀이 패치를 승격해도 소비 코드는 바뀌지 않는다. 버전을 고정하지 않는다. `v1`은 `<html data-*>`를 읽지 않는 구 버전이다 — 새 프로젝트는 쓰지 않는다.
 - 로컬(`localhost:3000`)과 `interactive.hankookilbo.com`에서 헤더가 안 뜨고 콘솔에 `Access to fetch … blocked by CORS`가
   나오면 CDN 허용 목록 문제다(7장 웹폰트와 같은 정책). 코드 문제가 아니므로 프론트개발팀에 문의한다.
 
@@ -166,7 +184,7 @@ test -f dist/index.html && echo "OK dist/index.html" && \
 for key in G-HR08PM6YWZ code.jquery.com/jquery-3.7.1.min.js www.hankookilbo.com/Inc/Js/hkAnalTag_hub.js \
            interactive-embed.js addon/icon_font/iconFont.css hk_fonts.css kakao.min.js \
            hk:nw_newsid hk:nw_pagecode og:locale og:image og:image:width twitter:image:width kakao_og_image twitter:card \
-           byline share-tools body-wrapper full-loader data-scroll-container; do
+           byline share-tools body-wrapper full-loader data-flow data-view data-state data-gnb data-theme; do
   grep -q "$key" dist/index.html && echo "OK $key" || echo "MISSING $key"
 done
 ```
@@ -220,6 +238,7 @@ Vue, Svelte 등 다른 프레임워크는 쓰지 않는다. 정적 HTML은 `.ast
 │   │   └── Layout.astro            # <head> 메타, 애널리틱스, body-wrapper
 │   ├── lib/js/_comm/
 │   │   ├── common.js               # removeLoader
+│   │   ├── hkCommon.js             # 공통영역(헤더·추천) <html data-*> 제어 — setCommon, wireScrollFlow, onMenu
 │   │   ├── ioScroll.js             # IntersectionObserver 기반 스크롤 유틸
 │   │   └── util.js                 # addComma, chunkArray
 │   ├── pages/
@@ -403,6 +422,10 @@ export const PAGE_CODE = "hk_news_read_A0000000000000000000"; // "hk_news_read_"
 export const ARTICLE_KEY = "A0000000000000000000"; // 연결 기사 키 (A + 19자리)
 export const FOLDER_NAME = "{FOLDER_NAME}"; // FTP 폴더명, 영문 소문자 + 하이픈/언더스코어
 
+export const FLOW = "scroll"; // "scroll" | "game" — 인터랙티브 형태 (1단계 인터뷰). <html data-flow>
+export const VIEW = "normal"; // "normal" | "mobile" — 뷰포트 형식. mobile 은 PC 에서도 3:5 휴대폰 화면을 가운데 띄운다. <html data-view>
+export const THEME = "dark"; // "dark" | "light" — 페이지 배경. _variables.sass $bgBase 와 맞춘다. <html data-theme class="dark">
+
 export const POST_DATE = "2026.01.01"; // 바이라인 게시일
 
 export const BYLINE_MEMBERS = [
@@ -420,6 +443,8 @@ export const BYLINE_MEMBERS = [
 | `THIS_URL`                    | og:url, twitter:url                                                                              |
 | `PAGE_CODE`, `ARTICLE_KEY`    | 사내 통계 메타 `hk:nw_pagecode`, `hk:nw_newsid`, 인터랙티브 임베드 `interactive-embed.js?Nid=`   |
 | `FOLDER_NAME`                 | OG 이미지 절대 경로 (`/v/{FOLDER_NAME}/img/ogimage.png`, `kakao_og_image`용 `ogimage_kakao.png`) |
+| `FLOW`, `VIEW`                | `<html data-flow data-view>`. `FLOW`에 따라 Layout이 `wireScrollFlow()`를 켠다(스크롤형)         |
+| `THEME`                       | `<html data-theme>` + `class="dark"`. `$bgBase`와 맞춘다                                         |
 | `POST_DATE`, `BYLINE_MEMBERS` | 바이라인                                                                                         |
 
 ---
@@ -438,6 +463,9 @@ import {
   PAGE_CODE,
   ARTICLE_KEY,
   FOLDER_NAME,
+  FLOW,
+  VIEW,
+  THEME,
 } from "../utils/constant/META";
 import Byline from "../components/Astro/byline.astro";
 
@@ -445,8 +473,16 @@ import "../styles/style.sass";
 ---
 
 <!DOCTYPE html>
-<!-- class="dark": 페이지 배경이 어두울 때. 인터랙티브 헤더·추천 카드가 이 클래스를 읽어 다크 테마가 된다. 밝은 배경이면 뺀다 (0-1장 "테마") -->
-<html lang="ko" class="dark">
+<!-- 공통영역(헤더·추천 카드) 상태는 <html data-*> 로 선언한다 (0-1장 "공통영역 API"). class="dark" 는 구 CDN 호환용으로 THEME 에서 자동 생성 -->
+<html
+  lang="ko"
+  class={THEME === "dark" ? "dark" : undefined}
+  data-flow={FLOW}
+  data-view={VIEW}
+  data-state="intro"
+  data-gnb="transparent"
+  data-theme={THEME}
+>
   <head>
     <title>{HTML_TITLE} | 한국일보</title>
     <meta charset="utf-8" />
@@ -541,11 +577,10 @@ import "../styles/style.sass";
       gtag("config", "G-HR08PM6YWZ");
     </script>
 
-    <!-- 한국일보 인터랙티브 임베드: 헤더 웹컴포넌트 + 추천 카드 (0-1장 참고). Nid는 대문자 N, 값은 META.ts의 ARTICLE_KEY -->
+    <!-- 한국일보 인터랙티브 임베드 v2: 헤더 웹컴포넌트 + 추천 카드 (0-1장 참고). Nid는 대문자 N, 값은 META.ts의 ARTICLE_KEY -->
     <script
       is:inline
-      src={`https://assets.hankookilbo.com/components/interactive-embed/v1/interactive-embed.js?Nid=${ARTICLE_KEY}`}
-      data-scroll-container=".body-wrapper"
+      src={`https://assets-dev.hankookilbo.com/components/interactive-embed/v2/interactive-embed.js?Nid=${ARTICLE_KEY}`}
     ></script>
 
     <!-- jQuery — 아래 통계 스크립트(hkAnalTag_hub.js)가 $ 를 쓴다. 반드시 통계 스크립트보다 앞 -->
@@ -565,6 +600,12 @@ import "../styles/style.sass";
 
     <script>
       import { removeLoader } from "../lib/js/_comm/common.js";
+      import { wireScrollFlow } from "../lib/js/_comm/hkCommon.js";
+      import { FLOW } from "../utils/constant/META";
+
+      // 스크롤형: GNB 숨김/바탕과 크레딧 진입을 .body-wrapper 스크롤로 정한다 (8장 hkCommon).
+      // 게임형은 index.astro 의 화면 전환이 setCommon() 으로 정한다 (10장 패턴 E).
+      if (FLOW === "scroll") wireScrollFlow();
 
       // iOS Safari 핀치줌 차단
       document.addEventListener(
@@ -833,7 +874,7 @@ $font32: clamp(24px, $fontCalc, 32px)
 $font36: clamp(26px, $fontCalc, 36px)
 $font38: clamp(28px, $fontCalc, 38px)
 
-// colors (다크 테마 기본, 프로젝트마다 변경). 밝은 배경으로 바꾸면 Layout의 <html>에서 class="dark"도 뺀다 (0-1장 "테마")
+// colors (다크 테마 기본, 프로젝트마다 변경). 밝은 배경으로 바꾸면 META.ts 의 THEME 도 "light" 로 (0-1장 "공통영역 API")
 $bgBase: #111
 $bgBaseBlur: rgba(255,255,255,0.6)
 $fontColBase: #fff
@@ -1097,6 +1138,82 @@ body.loading interactive-header
 ---
 
 ## 8. 공통 JS 라이브러리
+
+### `src/lib/js/_comm/hkCommon.js` — 공통영역(헤더·추천 카드) 제어
+
+0-1장 "공통영역 API"의 `<html data-*>`를 쓰는 쪽이다. 헤더·카드는 이 속성만 읽으므로, 프로젝트가 **언제** 바꿀지를 여기서 정한다.
+
+```js
+// 한국일보 공통영역(인터랙티브 헤더·추천 카드) 제어. 상태는 <html data-*> 하나로 선언한다 (템플릿 0-1장).
+const root = document.documentElement;
+
+/** 진행 단계·GNB 를 한 번에 쓴다. 예: setCommon({ state: "credits", gnb: "transparent" }). 값이 null 이면 속성을 지운다 */
+export function setCommon(attrs) {
+  for (const [k, v] of Object.entries(attrs)) v == null ? delete root.dataset[k] : (root.dataset[k] = v);
+}
+
+/**
+ * 스크롤형(FLOW="scroll") 자동 배선. Layout.astro 가 호출한다.
+ *  - 맨 위: intro·transparent / 내리면 hidden / 올리면 solid (state=play)
+ *  - 크레딧(바이라인) 윗선이 화면 아래 ratio(기본 40%) 선에 닿거나 맨 아래면 credits·transparent — 추천 카드가 뜬다
+ *  - credits 동안은 스크롤이 GNB 를 건드리지 않는다. 벗어나면 play 로 돌아간다
+ */
+export function wireScrollFlow({
+  scroller = document.querySelector(".body-wrapper"),
+  creditsEl = document.querySelector(".byline"),
+  ratio = 0.4,
+} = {}) {
+  if (!scroller || !creditsEl) return;
+  let last = 0;
+  scroller.addEventListener(
+    "scroll",
+    () => {
+      const y = scroller.scrollTop;
+      if (root.dataset.state !== "credits" && y !== last) {
+        setCommon(y <= 8 ? { state: "intro", gnb: "transparent" } : { state: "play", gnb: y > last ? "hidden" : "solid" });
+      }
+      last = y;
+    },
+    { passive: true },
+  );
+  const atBottom = () => scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 2;
+  new IntersectionObserver(
+    ([e]) => {
+      if (e.isIntersecting || atBottom()) setCommon({ state: "credits", gnb: "transparent" });
+      else if (root.dataset.state === "credits") setCommon({ state: "play" });
+    },
+    { root: scroller, rootMargin: `0px 0px -${Math.round(ratio * 100)}% 0px` },
+  ).observe(creditsEl);
+}
+
+/** 게임 중 메뉴(로고 버튼) 열림/닫힘. open 이면 시계를 멈춘다. 시계가 없는 게임은 안 붙여도 된다 */
+export function onMenu(cb) {
+  document.addEventListener("hk-interactive-menu", (e) => cb(e.detail.open));
+}
+
+/** 추천 카드 노출("shown") / 닫기("dismissed") */
+export function onRecommend(cb) {
+  document.addEventListener("hk-interactive-recommend", (e) => cb(e.detail.state));
+}
+
+/**
+ * 모바일뷰(VIEW="mobile") + 게임형(FLOW="game") 의 PC·태블릿(폭 690 이상)만 바깥 GNB 가 브라우저 라이트/다크를 따른다.
+ * 휴대폰 폭에서는 META.THEME 로 돌아온다. 폭·스킴 분기는 헤더가 아니라 여기(호스트)서 한다. 패턴 F 에서만 호출한다.
+ */
+export function syncOuterTheme(theme) {
+  const wide = matchMedia("(min-width: 690px)");
+  const scheme = matchMedia("(prefers-color-scheme: dark)");
+  const apply = () => {
+    const t = wide.matches ? (scheme.matches ? "dark" : "light") : theme;
+    setCommon({ theme: t });
+    root.classList.toggle("dark", t === "dark");
+    root.style.setProperty("--hk-gnb-solid-bg", scheme.matches ? "#2a2a2a" : "#eee");
+  };
+  wide.addEventListener("change", apply);
+  scheme.addEventListener("change", apply);
+  apply();
+}
+```
 
 ### `src/lib/js/_comm/common.js`
 
@@ -1464,6 +1581,105 @@ three.js / react-three-fiber는 반드시 `client:only="react"`로 마운트한�
 - 인터랙션(hover, 필터)이 필요하면 React 아일랜드 + `client:visible`.
 - 외부 차트 라이브러리를 쓴다면 번들 크기를 먼저 확인한다. d3는 필요한 모듈만 (`d3-scale`, `d3-shape`) 설치한다.
 
+### 패턴 E. 게임형 (화면 넘김) — `FLOW = "game"`
+
+퀴즈·선택지·미니게임처럼 **페이지 스크롤 없이 한 화면씩 바뀌는** 형식. 공통영역은 화면 전환 코드가 `setCommon()`으로 직접 정한다. `Layout.astro`의 `wireScrollFlow()`는 `FLOW === "scroll"`에서만 돌므로 건드릴 게 없다.
+
+```astro
+---
+// src/pages/index.astro — 화면 섹션을 전부 두고 하나만 보인다
+import Layout from "../layouts/Layout.astro";
+---
+<Layout>
+  <main class="game">
+    <section class="screen" data-screen="title">…시작 화면…</section>
+    <section class="screen" data-screen="play">…문항/진행 화면…</section>
+    <section class="screen" data-screen="credits">…결과·만든 사람들. "처음부터 다시" 버튼은 여기서 만든다…</section>
+  </main>
+</Layout>
+
+<script>
+  import { setCommon, onMenu } from "../lib/js/_comm/hkCommon.js";
+
+  // 화면별 공통영역 값. 표가 곧 규칙이다 — 화면이 늘면 행을 추가한다
+  const COMMON = {
+    title:   { state: "intro",   gnb: "transparent" }, // 투명 GNB. 시작 그림이 어두우면 THEME 을 dark 로
+    play:    { state: "play",    gnb: "menu" },        // GNB 숨김 + 왼쪽 위 로고 버튼. 누르면 GNB 가 내려온다
+    credits: { state: "credits", gnb: "transparent" }, // 투명 GNB 고정 + 추천 카드
+  };
+
+  export function go(name) {
+    setCommon(COMMON[name] ?? COMMON.play);
+    document.querySelectorAll(".screen").forEach((el) => el.classList.toggle("is-on", el.dataset.screen === name));
+  }
+
+  // 로고 버튼으로 GNB 를 열어 둔 동안 게임 시계를 멈춘다. 시계가 없으면 이 줄은 없어도 된다
+  onMenu((open) => window.gameClock?.hold("menu", open));
+
+  go("title");
+</script>
+```
+
+- 끝 화면의 "이전 화면 가기·처음부터 다시" 같은 버튼은 **프로젝트가** 만든다. 공통영역은 만들어 주지 않는다.
+- GNB가 숨은 화면(`gnb=menu`)에서 나가기는 로고 버튼 → 내려온 GNB의 ‹·로고가 맡는다. 확인 창은 두지 않는다.
+- 엔딩이 한 화면이고 아직 크레딧이 아니면 `play` 그대로 둔다. 추천 카드는 `credits`에서만 뜬다.
+
+### 패턴 F. 모바일뷰 — `VIEW = "mobile"`
+
+PC·태블릿에서도 **세로 3:5 휴대폰 화면(최대 480×800)을 GNB 아래 가운데에 띄우는** 형식. 주로 게임형과 조합한다. 폭 690 미만(휴대폰)에서는 화면이 창을 꽉 채우고 일반뷰와 같아진다.
+
+```scss
+// src/styles/_mobile_view.scss — 패턴 F 에서만 style.sass 에 @import
+:root[data-view="mobile"] {
+  --gnb-h: 64px;
+  --site-bg: #eee;                       // 바깥 판 (브라우저 라이트)
+  @media (prefers-color-scheme: dark) { --site-bg: #2a2a2a; }
+  @media (min-width: 1280px) { --gnb-h: 76px; }
+}
+@media (min-width: 690px) {
+  :root[data-view="mobile"] .body-wrapper {
+    background: var(--site-bg);
+    display: grid;
+    place-items: center;
+    padding-top: var(--gnb-h);
+  }
+  :root[data-view="mobile"] .shell {      // 떠 있는 휴대폰 화면. 콘텐츠 루트에 class="shell"
+    --shell-h: min(800px, calc(100dvh - var(--gnb-h)));
+    width: calc(var(--shell-h) * 0.6);
+    height: var(--shell-h);
+    overflow: hidden;
+    border-radius: 24px;                 // 피그마 184:745 — 태블릿 24, PC 32
+    box-shadow: 1px 10px 24px 2px rgba(0, 0, 0, 0.12);
+  }
+}
+@media (min-width: 1280px) {
+  :root[data-view="mobile"] .shell { border-radius: 32px; }
+}
+// 화면이 너무 작을 때 (태블릿 높이 564 미만 · PC 576 미만 · 가로로 돌린 휴대폰): 안내가 덮는다. 색은 바깥 판을 따른다
+.hk-small { display: none; }
+@media (min-width: 690px) and (max-width: 1279.98px) and (max-height: 563.98px), (min-width: 1280px) and (max-height: 575.98px) {
+  :root[data-view="mobile"] .hk-small {
+    display: grid; place-items: center; position: fixed; inset: var(--gnb-h) 0 0; z-index: 640;
+    background: var(--site-bg); color: #1a1a1a; text-align: center;
+    @media (prefers-color-scheme: dark) { color: #fff; }
+  }
+}
+```
+
+```ts
+// 패턴 F 의 <script> — 게임형이면 바깥 GNB 가 브라우저 테마를 따르고, 안내가 떠 있는 동안 시계를 멈춘다
+import { syncOuterTheme } from "../lib/js/_comm/hkCommon.js";
+import { FLOW, THEME } from "../utils/constant/META";
+if (FLOW === "game") syncOuterTheme(THEME);
+const tooSmall = matchMedia("(min-width: 690px) and (max-width: 1279.98px) and (max-height: 563.98px), (min-width: 1280px) and (max-height: 575.98px)");
+const syncSmall = () => window.gameClock?.hold("small", tooSmall.matches);
+tooSmall.addEventListener("change", syncSmall); syncSmall();
+```
+
+- `<div class="hk-small"><p>화면이 너무 작아요</p><p>창을 키우거나 휴대폰을 세로로 돌려 주세요</p></div>`를 `.body-wrapper` 안에 둔다. 문구는 디자인 확정값으로 바꾼다.
+- 폭 690 이상에서 GNB는 헤더가 CSS로 바깥에 고정한다(`data-gnb`가 `menu`여도 로고 버튼 없음). 프로젝트가 따로 할 일은 없다.
+- 스크롤형 모바일뷰(`FLOW="scroll"`)는 `syncOuterTheme`를 부르지 않는다. `THEME` 고정이다.
+
 ---
 
 ## 11. `public/` 필수 파일
@@ -1504,6 +1720,7 @@ three.js / react-three-fiber는 반드시 `client:only="react"`로 마운트한�
 - `element.scrollIntoView({ behavior: "smooth" })`는 정상 동작한다.
 - `position: sticky`는 `.body-wrapper` 안에서 정상 동작한다.
 - `position: fixed` 요소는 `.body-wrapper` 바깥 기준(뷰포트)으로 붙는다. 이것은 의도된 동작이다.
+- **GNB·추천 카드를 스크롤로 직접 조작하지 않는다.** `hkCommon.wireScrollFlow()` 하나가 맡는다(스크롤형). 콘텐츠용 IntersectionObserver와 섞지 않는다. 게임형은 `setCommon()`만 쓴다.
 
 ### 경로
 
@@ -1535,7 +1752,7 @@ three.js / react-three-fiber는 반드시 `client:only="react"`로 마운트한�
 - 컴포넌트 `.scss`에서 변수, 믹스인을 쓸 때는 파일 상단에 `@import "variables"; @import "utils";`를 추가한다.
 - 폰트 크기는 `$font16` 같은 변수를 쓴다. `px` 직접 지정은 14px 이하의 캡션에만 허용한다.
 - 매직 넘버는 변수로 뺀다. 예: `$story-box-max-width: 640px`.
-- 테마는 `<html>`의 `dark` 클래스 하나로 정한다. 배경이 어두우면 `class="dark"`, 밝으면 없음. 둘 중 하나로 고정하고 전환 기능은 만들지 않는다 (0-1장 "테마").
+- 테마는 `META.ts`의 `THEME` 하나로 정한다. Layout이 `<html data-theme>`와 `class="dark"`를 만든다. 둘 중 하나로 고정하고 전환 기능은 만들지 않는다 (0-1장 "공통영역 API"). 예외는 패턴 F 게임형의 PC(`syncOuterTheme`)뿐이다.
 
 ### 접근성
 
@@ -1604,14 +1821,17 @@ npm run preview
 [ ] dist/index.html 에 https://code.jquery.com/jquery-3.7.1.min.js 포함, hkAnalTag_hub.js 보다 앞
 [ ] dist/index.html 에 https://www.hankookilbo.com/Inc/Js/hkAnalTag_hub.js 포함 (hkFunc.js 없음)
 [ ] dist/index.html 에 hk:nw_* 메타 5종 포함
-[ ] dist/index.html 에 interactive-embed.js?Nid=<ARTICLE_KEY> 포함 (대문자 N, 값이 META.ts와 동일)
-[ ] 임베드 스크립트에 data-scroll-container=".body-wrapper" 포함 (헤더 숨김·추천 카드가 .body-wrapper 스크롤을 따라간다)
+[ ] dist/index.html 에 components/interactive-embed/v2/interactive-embed.js?Nid=<ARTICLE_KEY> 포함 (대문자 N, 값이 META.ts와 동일, v1 아님)
+[ ] <html> 에 data-flow / data-view / data-state="intro" / data-gnb="transparent" / data-theme 5종 선언
+[ ] data-theme · class="dark" 유무 · _variables.sass $bgBase 밝기 셋이 일치 (self_check.js)
+[ ] 스크롤형: 끝까지 내리면 <html data-state="credits"> 가 되고 추천 카드가 뜸. 내리면 GNB 숨고 올리면 바탕 깔림
+[ ] 게임형: 진행 화면에서 GNB 숨고 왼쪽 위 로고 버튼이 뜸 → 누르면 GNB 내려오고 ✕ → 끝 화면에서 추천 카드 (자기 기사 없음)
 [ ] dist/index.html 에 assets.hankookilbo.com/fonts/hk_fonts.css 포함
 [ ] dist/ 안에 폰트 파일(woff/woff2/ttf) 없음 — 예외: dist/addon/icon_font/fonts/hk.* (아이콘 폰트)
 [ ] 바이라인 공유 아이콘 4종이 로컬(localhost:3000)에서도 그림으로 보임 (빈 네모면 iconFont.css 를 CDN 주소로 링크한 것)
 [ ] 인터랙티브 헤더(<interactive-header>)가 body 맨 앞에 뜸 (임베드 스크립트가 붙임, 자체 헤더 없음)
 [ ] 로딩 화면(스피너)이 떠 있는 동안 헤더가 보이지 않고, 로더가 걷힌 뒤 헤더가 나타남 (_full_loader.sass의 body.loading interactive-header { opacity: 0 !important } 규칙)
-[ ] <html>의 dark 클래스가 페이지 배경과 맞음 (어두운 배경 = class="dark") — 헤더 로고가 배경 위에서 보임
+[ ] 헤더 로고·아이콘이 페이지 배경 위에서 보임 (THEME 과 $bgBase 일치)
 [ ] dist/index.html 에 kakao_og_image 메타 포함, developers.kakao.com/sdk 없음
 [ ] 바이라인(byline)이 본문 아래에 렌더됨
 [ ] body.loading > .body-wrapper > .full-loader 구조 유지
@@ -1625,7 +1845,7 @@ npm run preview
 [ ] 인터랙티브 헤더 공유 4종 (페북, X, 카카오, URL 복사) 동작 — 카카오 카드에 ogimage_kakao.png가 뜸
 [ ] 바이라인 공유 4종 (페북, X, 카카오, URL 복사) 동작 — 헤더 공유와 같은 카드가 뜸. URL 복사는 "주소가 복사되었습니다." 알림이 뜸. 헤더 공유와 같은 주소·카드. dist/index.html 에 Kakao.Link 없음(v1 API)
 [ ] 바이라인 제작진, 게시일, 공유 4종, 맨 끝 저작권 문구 (관련 기사 카드 없음)
-[ ] 인터랙티브 헤더(<interactive-header>)가 body 맨 앞에 뜨고, 스크롤 후 하단 추천 카드가 뜸 (자기 기사는 추천에 없음)
+[ ] 인터랙티브 헤더(<interactive-header>)가 body 맨 앞에 뜨고, 크레딧(data-state="credits")에서 하단 추천 카드가 뜸 (자기 기사는 추천에 없음)
 [ ] 모바일 크롬, 사파리, 카카오톡 인앱, 네이버 인앱에서 스크롤 확인
 [ ] iOS 사파리 하단 주소창 겹침 없음
 [ ] 콘솔 에러 0 (/Inc/Js/*.js 404는 로컬에서만 정상)
