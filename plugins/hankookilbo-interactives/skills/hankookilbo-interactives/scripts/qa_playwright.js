@@ -185,7 +185,7 @@ async function main() {
             nid,
             headerMounted: Boolean(header && header.shadowRoot),
             headerIsFirstInBody: Boolean(header && document.body.firstElementChild === header),
-            // 공통영역 API (템플릿 0-1장) — <html data-*> 초기값
+            // 공통영역 API (references/common-area.md) — <html data-*> 초기값
             html: ["flow", "view", "state", "gnb", "theme"].reduce((o, k) => ((o[k] = document.documentElement.dataset[k] ?? null), o), {}),
             recommendMounted: Boolean(document.querySelector("interactive-recommend")),
           };
@@ -362,7 +362,7 @@ async function main() {
         `  ${declared.length === 5 ? "✓" : "✕"} 공통영역 API <html data-*>: ${
           declared.length === 5
             ? Object.entries(h).map(([k, v]) => `${k}=${v}`).join(" ")
-            : `누락 ${["flow", "view", "state", "gnb", "theme"].filter((k) => !h[k]).join(", ")} — Layout.astro <html> 에 선언 (템플릿 5장)`
+            : `누락 ${["flow", "view", "state", "gnb", "theme"].filter((k) => !h[k]).join(", ")} — Layout.astro <html> 에 선언 (assets/template/src/layouts/Layout.astro)`
         }`
       );
       console.log(`  ${e.recommendMounted ? "✓" : "-"} 추천 카드 <interactive-recommend>: ${e.recommendMounted ? "마운트됨 (data-state=\"credits\" 에서 표시)" : "없음 (Nid 없음 또는 data-recommend=\"false\")"}`);
@@ -370,7 +370,7 @@ async function main() {
         console.log(`  ${e.creditsReached ? "✓" : "✕"} 스크롤형 끝: data-state=${e.creditsReached ? "credits" : `${document_state(e)} — wireScrollFlow() 가 Layout 에서 호출되는지, 바이라인(.byline)이 있는지 확인`} / gnb=${e.endGnb}`);
         console.log(`  ${e.recommendVisible ? "✓" : "✕"} 스크롤형 끝: 추천 카드 ${e.recommendVisible ? "표시됨" : "안 보임 (후보 없음·API 실패·credits 미진입)"}`);
       } else if (h.flow === "game") {
-        console.log("  - 게임형: 진행 화면 로고 버튼·끝 화면 추천 카드는 자동 확인 불가 — 담당자 확인 항목 (템플릿 14장)");
+        console.log("  - 게임형: 진행 화면 로고 버튼·끝 화면 추천 카드는 자동 확인 불가 — 담당자 확인 항목 (references/template-overview.md QA 체크리스트)");
       }
     }
   }

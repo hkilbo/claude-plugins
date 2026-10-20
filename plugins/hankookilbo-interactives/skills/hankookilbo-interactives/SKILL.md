@@ -10,18 +10,17 @@ description: 한국일보 인터랙티브 기사 페이지(스크롤 여정형, 
 
 ## 핵심 원칙 (가장 중요)
 
-- **기술/구조에 관한 모든 것의 단일 진실 공급원은 `references/hk-interactive-template.md`
-  입니다.** 한국일보 개발부문이 만든 공식 문서이며, Astro+React 스택, 폴더 구조, `META.ts`,
-  인터랙티브 헤더(임베드 스크립트)/`Byline`, GA4/카카오 SDK/한국일보 통계 등 필수 스크립트, 배포 규칙이
-  전부 여기 정의돼 있습니다. **2단계(제작)를 시작하기 전에 이 문서 전체를 반드시
-  읽으세요.** 이 스킬의 다른 어떤 설명보다 이 문서가 우선합니다.
+- **기술/구조의 단일 진실 공급원은 `references/`(규칙)와 `assets/template/`(코드)입니다.**
+  한국일보 개발부문이 만든 공식 템플릿을 둘로 나눴습니다. 프로젝트에 그대로 들어갈 코드(`Layout.astro`, `META.ts`,
+  스타일, 공통 JS, 설정 파일)는 `assets/template/`에 실제 파일로 있으니 **읽지 말고 복사**하세요. 규칙과 설명은
+  `references/`에 작업 상황별로 나뉘어 있으니 **그 상황에 필요한 파일 하나만** 읽으세요(아래 "참고 파일").
+  이 스킬의 다른 어떤 설명보다 이 문서들이 우선합니다.
 - **기획 인터뷰(1단계)에서 만드는 브리프(`brief.md`)는 "최초 기획 메모"일 뿐, 이후
   절대 바꿀 수 없는 규칙 문서가 아닙니다.** 제작 도중 사용자가 다른 지시를 내리면
   항상 **최신 지시가 우선**합니다.
 - 반대로 아래는 몇 번을 뒤엎는 지시가 오더라도 항상 지켜야 하는 **고정 규칙**
-  입니다 (세부 내용은 `references/hk-interactive-template.md`, 특히 "0-1. 필수
-  요건"과 "12. 규칙과 함정" 참고):
-  1. `references/hk-interactive-template.md`의 "0-1. 필수 요건"에 있는 모든 항목
+  입니다 (세부 내용은 `references/template-overview.md` 「필수 요건」과 「규칙과 함정」):
+  1. `references/template-overview.md` 「필수 요건」에 있는 모든 항목
      (GA4 `G-HR08PM6YWZ` 하나/카카오SDK v2/한국일보 통계 `hkAnalTag_hub.js`, 인터랙티브 임베드, Byline, body-wrapper
      구조 등) — 절대 생략·삭제·ID변경 금지
   2. `npm run build` 산출물은 항상 `dist/` (astro.config.mjs의 `outDir` 변경 금지)
@@ -37,6 +36,20 @@ description: 한국일보 인터랙티브 기사 페이지(스크롤 여정형, 
   판단 기준: **"이걸 지키지 않으면 배포가 불가능한가?"** 라면 고정 규칙,
   아니면 브리프입니다.
 
+## 참고 파일 — 언제 무엇을 읽나
+
+| 상황 | 읽을 파일 | 복사할 코드 |
+|---|---|---|
+| 새 프로젝트 세팅, 규칙, 빌드·배포, QA 체크리스트 | `references/template-overview.md` | `assets/template/` 전체 + `assets/common/`, `assets/addon/` |
+| 헤더·추천 카드가 안 뜨거나 숨김/노출 시점을 바꿀 때 | `references/common-area.md` | (이미 `assets/template/src/lib/js/_comm/hkCommon.js`에 포함) |
+| 본문 구성 — 스크롤리텔링·롱폼·React 아일랜드·게임형·모바일뷰 | `references/patterns.md` | `assets/patterns/<패턴>/` 하나 |
+| 바이라인·공유 버튼 수정 | `references/byline-and-share.md` | — |
+| 색(라이트/다크)·폰트·변수·스타일 규칙 | `references/theming.md` | — |
+| 구 프로젝트(`hkUtilMoreInteractive`, 임베드 v1) 유지보수 | `references/legacy.md` | `assets/legacy/` |
+| 라이브러리 선택(캐러셀·스크롤·지도·상태 공유) | `hankookilbo-interactives-libs` 스킬 | — |
+
+한 파일이 300줄을 넘는 것은 `template-overview.md`뿐이며 맨 위에 목차가 있습니다.
+
 ---
 
 ## 1단계 — 기획 인터뷰
@@ -46,7 +59,7 @@ description: 한국일보 인터랙티브 기사 페이지(스크롤 여정형, 
 1. 기획 배경, 기획 목적
 2. 대상 소재(사진·영상·데이터) 설명, 원하는 스토리
 3. **형식과 뷰** — 담당자 말로 묻습니다. 답은 `META.ts`의 `FLOW`·`VIEW`가 되고, 헤더·추천 카드(공통영역)가
-   언제 숨고 뜨는지를 정합니다 (템플릿 0-1장 "공통영역 API").
+   언제 숨고 뜨는지를 정합니다 (`references/common-area.md`).
    - 3-a. "이 페이지는 **스크롤해서 읽는** 페이지인가요, **게임처럼 버튼을 눌러 화면을 넘기는** 페이지인가요?"
      → 스크롤 = `FLOW="scroll"` / 화면 넘김·퀴즈·선택지·미니게임 = `FLOW="game"`.
      판단 기준: 본문이 세로로 이어지면 scroll, 한 화면씩 바뀌고 페이지 스크롤이 없으면 game.
@@ -54,7 +67,7 @@ description: 한국일보 인터랙티브 기사 페이지(스크롤 여정형, 
      → 휴대폰 모양 = `VIEW="mobile"` / 창 전체 = `VIEW="normal"`(기본). 모바일뷰는 게임형에 주로 씁니다. 잘 모르면 normal.
 4. 원하는 연출 방식 — 잘 모르면 추천. 아래 참고표 사용:
 
-   | 담당자에게 보여줄 이름 | 언제 적합한지 | `hk-interactive-template.md` 10장의 어떤 패턴 기반인지 |
+   | 담당자에게 보여줄 이름 | 언제 적합한지 | `references/patterns.md`의 어떤 패턴 기반인지 |
    |---|---|---|
    | 스크롤로 계속 이어지는 여정형 | 등반/탐험/여정 서사 | 패턴 B (스크롤리텔링, 배경 고정 + IntersectionObserver) |
    | 예전/지금 비교 슬라이더 | 같은 장소·인물의 시간 변화 | 패턴 A(단순 롱폼) + React 아일랜드로 비교 슬라이더 컴포넌트 |
@@ -74,7 +87,7 @@ description: 한국일보 인터랙티브 기사 페이지(스크롤 여정형, 
    아직 못 받았다면 임시값으로 두고 넘어가되, `COMPLETION.md`에 "기사키 미발급
    — 배포 전 한국일보 확인 필요"라고 반드시 남기세요.
    이 값은 통계 메타뿐 아니라 **인터랙티브 임베드 스크립트의 `Nid=`**(헤더 +
-   하단 추천 카드, 템플릿 0-1장)에도 들어갑니다. `Nid`는 대문자 N이고 값은
+   하단 추천 카드, `references/common-area.md`)에도 들어갑니다. `Nid`는 대문자 N이고 값은
    `META.ts`의 `ARTICLE_KEY`를 그대로 씁니다 — 다른 곳에 하드코딩하지 마세요.
    임시값인 채 배포하면 추천 카드에 자기 기사가 뜨거나 카드가 안 뜹니다.
 8. 게시 예정일(`POST_DATE`)
@@ -88,7 +101,7 @@ description: 한국일보 인터랙티브 기사 페이지(스크롤 여정형, 
     담당자에게는 "페이지 색상을 라이트(흰 바탕)와 다크(검은 바탕) 중 어떤 걸로 할까요?"라고
     물으면 됩니다. 둘 중 하나로 고정하고, 페이지 안에서 바꾸는 전환 기능은 만들지 않습니다.
     이 답은 `META.ts`의 `THEME`("dark" | "light")에 씁니다. Layout이 `<html data-theme>`와 `class="dark"`를
-    여기서 자동으로 만들고, `_variables.sass`의 `$bgBase`도 같은 쪽으로 맞춥니다 (템플릿 0-1장 "공통영역 API").
+    여기서 자동으로 만들고, `_variables.sass`의 `$bgBase`도 같은 쪽으로 맞춥니다 (`references/theming.md`).
     `self_check.js`가 셋의 일치를 검사합니다. 예외는 모바일뷰·게임형의 PC뿐입니다(패턴 F).
 13. 레퍼런스 사이트
 14. 하지 말아야 할 것 (제약사항)
@@ -124,7 +137,7 @@ cp -r assets/common/. <프로젝트폴더>/public/img/common/
 
 **공통 자산(아이콘 폰트)**: `assets/addon/icon_font/`에 한국일보 아이콘 폰트(`iconFont.css` +
 `fonts/hk.*`)가 들어있습니다. 바이라인 공유 4종 아이콘이 이 폰트입니다. 폴더째 복사하고,
-`Layout.astro`에서는 `./addon/icon_font/iconFont.css` 상대 경로로 링크합니다 (템플릿 5장):
+`Layout.astro`에서는 `./addon/icon_font/iconFont.css` 상대 경로로 링크합니다 (`assets/template/src/layouts/Layout.astro`에 포함):
 
 ```bash
 cp -r assets/addon <프로젝트폴더>/public/
@@ -135,9 +148,9 @@ CDN 주소(`interactive.hankookilbo.com/addon/icon_font/…`)로 링크하면 �
 
 **폰트는 복사하지 않습니다.** 한국일보 CDN의
 `https://assets.hankookilbo.com/fonts/hk_fonts.css`를 `Layout.astro` `<head>`에서
-링크하는 방식이고, 템플릿 5장 Layout 원문에 이미 들어있습니다. 제공 서체는
+링크하는 방식이고, `assets/template/src/layouts/Layout.astro`에 이미 들어있습니다. 제공 서체는
 `'Pretendard Variable'`(가변, 45~920)과 `'NanumMyeongjo'`(400/700/800) 두 가지이며
-스타일에서는 `$fontBase` / `$fontSerif` 변수로 씁니다 (템플릿 7장). `public/fonts/`
+스타일에서는 `$fontBase` / `$fontSerif` 변수로 씁니다 (`references/theming.md`). `public/fonts/`
 폴더, 폰트 파일, `@font-face` 선언을 만들지 마세요(아이콘 폰트 `public/addon/icon_font/`만 예외) — `scripts/self_check.js`가
 발견하면 실패 처리합니다. 다른 서체가 필요하면 한국일보 프론트개발팀에
 `hk_fonts.css` 추가를 요청하세요.
@@ -149,21 +162,19 @@ CDN 주소(`interactive.hankookilbo.com/addon/icon_font/…`)로 링크하면 �
 
 ## 2단계 — 제작
 
-**시작하기 전에 `references/hk-interactive-template.md` 전체를 읽으세요.**
-이 문서의 0장~13장이 프로젝트 생성 방법 그 자체입니다. 문서의 "0. AI에게
-이렇게 요청하세요"에 나온 형식대로, 1단계에서 모은 값(FOLDER_NAME, HTML_TITLE,
-HTML_DESC, ARTICLE_KEY, POST_DATE, 바이라인)을 채워 프로젝트를 생성하고, 3번의
-페이지 패턴(스크롤리텔링/단순 롱폼/데이터 시각화) 중 1단계에서 고른 연출
-방식에 맞는 걸 고르세요.
+**시작하기 전에 `references/template-overview.md`를 읽으세요.** 「프로젝트 생성 절차」대로 `assets/template/`를
+통째로 복사하고, `assets/common/`·`assets/addon/`을 `public/`에 넣은 뒤, 1단계에서 모은 값(FOLDER_NAME, HTML_TITLE,
+HTML_DESC, ARTICLE_KEY, POST_DATE, 바이라인, FLOW·VIEW·THEME)을 `META.ts`에 채웁니다. 본문은 `references/patterns.md`에서
+1단계의 연출 방식에 맞는 패턴 하나를 골라 `assets/patterns/<패턴>/`을 복사해 시작합니다.
 
-**공통영역(헤더·추천 카드) 배선**: 형식에 따라 할 일이 다릅니다 (템플릿 0-1장 "공통영역 API", 8장 `hkCommon.js`).
+**공통영역(헤더·추천 카드) 배선**: 형식에 따라 할 일이 다릅니다 (`references/common-area.md`).
 
 | `FLOW` | 할 일 |
 |---|---|
 | `scroll` | 없음. `Layout.astro`가 `wireScrollFlow()`를 켭니다. 내리면 GNB 숨김, 올리면 바탕, 바이라인이 화면 60%에 닿으면 추천 카드 |
 | `game` | 화면 전환 함수에서 `setCommon(COMMON[screen])` 한 줄 (패턴 E). 시작 `intro·transparent` → 진행 `play·menu` → 끝 `credits·transparent`. 시계가 있으면 `onMenu()`로 멈춤 |
 
-`VIEW="mobile"`이면 패턴 F의 `_mobile_view.scss`와 `<script>`를 추가합니다. GNB·추천 카드를 CSS나 스크롤 코드로 직접
+`VIEW="mobile"`이면 `references/patterns.md` 패턴 F의 `_mobile_view.scss`와 `<script>`를 추가합니다. GNB·추천 카드를 CSS나 스크롤 코드로 직접
 건드리지 마세요 — `<html data-*>`만이 통로입니다.
 
 **라이브러리 선택**: 캐러셀/슬라이더, 스크롤 인터랙션, 지도, 지도 위 데이터
@@ -226,7 +237,7 @@ CloudFront CORS 허용 목록(`localhost:3000`, `interactive.hankookilbo.com`) �
 > **주의**: 이 템플릿은 `window`가 아니라 `.body-wrapper`가 실제 스크롤
 > 컨테이너입니다. 콘텐츠 안에서 스크롤 관련 코드를 직접 짤 때
 > `window.scrollY`, `window.addEventListener("scroll")`을 쓰면 동작하지
-> 않습니다. `references/hk-interactive-template.md` 12장 "규칙과 함정"을
+> 않습니다. `references/template-overview.md` 「규칙과 함정」을
 > 참고하세요.
 
 ### 담당자에게 스크린샷 확인 요청 (3단계의 마지막, 반드시 멈춘다)
@@ -263,7 +274,7 @@ Byline(콘텐츠 크레딧)은 2단계에서 이미 `Layout.astro`에 포함되�
   뜨는지. `self_check.js`가 `share-tools` 존재와 카카오 v1 API(`Kakao.Link`) 미사용을 검사
 - 로딩 화면(스피너)이 떠 있는 동안 헤더가 보이지 않는지. `_full_loader.sass`의
   `body.loading interactive-header` / `opacity: 0 !important` 규칙이 담당하며 `self_check.js`가
-  있는지 확인합니다. 헤더를 건드리는 CSS는 이 한 줄이 유일한 예외입니다 (템플릿 0-1장 "헤더").
+  있는지 확인합니다. 헤더를 건드리는 CSS는 이 한 줄이 유일한 예외입니다 (`references/common-area.md`).
 - `<html>`에 `data-flow` `data-view` `data-state="intro"` `data-gnb="transparent"` `data-theme` 5개가 선언됐는지
   (`self_check.js`가 검사). `META.ts`의 `THEME`·`class="dark"`·`$bgBase`가 한쪽으로 맞는지 — 어긋나면 헤더 로고가 배경과
   같은 색이 돼 안 보입니다.
@@ -278,7 +289,7 @@ Byline(콘텐츠 크레딧)은 2단계에서 이미 `Layout.astro`에 포함되�
 3단계와 동일하게 `self_check.js` + `qa_playwright.js`를 다시 실행하세요. 스크린샷은 같은
 `qa-report/`에 덮어씁니다. 담당자가 확인한 뒤 화면이 바뀐 곳이 있으면 해당 파일을 알리고
 다시 확인받으세요 (바뀐 곳이 없으면 재요청하지 않습니다).
-추가로 `hk-interactive-template.md` "14. 배포 전 QA 체크리스트"를 하나씩
+추가로 `references/template-overview.md` 「배포 전 QA 체크리스트」를 하나씩
 확인하세요 (인터랙티브 헤더 표시, 헤더 공유 버튼, 모바일 인앱 브라우저 스크롤, 스크롤형 끝에서 `data-state="credits"`
 + 추천 카드, 게임형 진행 화면의 로고 버튼 등).
 
@@ -309,6 +320,6 @@ zip -r <FOLDER_NAME>-final.zip <프로젝트폴더>
 ```
 
 사용자에게 안내: "이 zip을 한국일보 담당자에게 전달하면 됩니다. 한국일보 배포팀은
-`hk-interactive-template.md` 13장 절차대로 `dist/`를 FTP로
+`references/template-overview.md` 「개발, 빌드, 배포」 절차대로 `dist/`를 FTP로
 `interactive.hankookilbo.com/v/{FOLDER_NAME}/`에 업로드하고, 기사 CMS에 URL을
 연결하고, 페이스북/카카오 OG 캐시를 갱신할 거예요."

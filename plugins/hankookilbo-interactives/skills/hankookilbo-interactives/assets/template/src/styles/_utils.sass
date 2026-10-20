@@ -1,0 +1,31 @@
+@use 'sass:math'
+
+@mixin clear()
+  &::after
+    content: ''
+    display: block
+    clear: both
+
+// 801px ~ 1440px
+@mixin tablet
+  @media (min-width: ($mobile-width + 1) + px) and (max-width: $tablet-width + px)
+    @content
+
+// 801px ~ 1200px
+@mixin tablet-limit
+  @media (min-width: ($mobile-width + 1) + px) and (max-width: $tablet-limit + px)
+    @content
+
+// ~ 800px
+@mixin mobile
+  @media (max-width: $mobile-width + px)
+    @content
+
+@function rem($pixels, $context: 16)
+  @return #{ math.div($pixels, $context) }rem
+
+@function em($pixels, $context: 16)
+  @return #{ math.div($pixels, $context) }em
+
+@function rem-ratio($px)
+  @return calc(#{ math.div($px, $tablet-width) } * 100vw)

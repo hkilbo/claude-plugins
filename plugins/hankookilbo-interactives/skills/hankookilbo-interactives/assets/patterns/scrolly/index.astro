@@ -1,0 +1,53 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { chapters } from "../data/data";
+import "../styles/scrolly.scss";
+---
+
+<Layout>
+  <main class="scrolly">
+    <!-- 배경 레이어 -->
+    <div class="bg-container">
+      {
+        chapters.map((ch, i) => (
+          <div class="bg-item" data-index={i} style={`background-image:url(${ch.bg})`} />
+        ))
+      }
+    </div>
+
+    <!-- 전경 레이어 -->
+    <div class="content-overlay">
+      {
+        chapters.map((ch, i) => (
+          <section class="story-section" data-index={i}>
+            <div class="story-box">
+              <h2>{ch.title}</h2>
+              {ch.stories.map((s) => s.description.map((d) => <p set:html={d} />))}
+            </div>
+          </section>
+        ))
+      }
+    </div>
+  </main>
+</Layout>
+
+<script>
+  const bgItems = document.querySelectorAll<HTMLElement>(".bg-item");
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        const index = Number(entry.target.getAttribute("data-index"));
+        bgItems.forEach((bg, i) => bg.classList.toggle("on", i === index));
+
+        // React 아일랜드에 알릴 때
+        window.dispatchEvent(new CustomEvent("section-change", { detail: index }));
+      });
+    },
+    // 화면 중앙 10% 구간에 들어올 때만 트리거
+    { root: null, rootMargin: "-45% 0px -45% 0px", threshold: 0 }
+  );
+
+  document.querySelectorAll(".story-section").forEach((s) => observer.observe(s));
+</script>

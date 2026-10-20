@@ -4,29 +4,29 @@
  *
  * 사용법: node self_check.js <프로젝트 폴더 경로>
  *
- * references/hk-interactive-template.md "0-1. 필수 요건 / 빌드 후 자동 검증"에
+ * references/template-overview.md 「필수 요건 / 빌드 후 자동 검증」에
  * 나오는 grep 체크리스트를 그대로 구현한 것 + 이 스킬의 고정 규칙(폰트는 CDN만 사용,
  * 공유 이미지 2장(존재·PNG·픽셀 크기), 로더 이미지, 용량 상한, META.ts 실제 값)을 추가로 검사합니다.
  *
- * 주의: hk-interactive-template.md가 갱신되면(식별자 추가/변경) 아래
+ * 주의: template-overview.md 의 검증 목록이 갱신되면(식별자 추가/변경) 아래
  * REQUIRED_DIST_KEYS도 함께 갱신해야 합니다.
  */
 
 const fs = require("fs");
 const path = require("path");
 
-// 인터랙티브 임베드(헤더·추천 카드) CDN 호스트. 템플릿 0-1장과 같은 값이어야 한다.
+// 인터랙티브 임베드(헤더·추천 카드) CDN 호스트. references/common-area.md 와 같은 값이어야 한다.
 // TODO(release): v2 운영 승격 후 "assets.hankookilbo.com" 으로 바꾼다
 const WC_CDN_HOST = "assets-dev.hankookilbo.com";
 
-// hk-interactive-template.md 0-1장 "빌드 후 자동 검증"과 동일한 목록
+// references/template-overview.md 「빌드 후 자동 검증」과 동일한 목록
 const REQUIRED_DIST_KEYS = [
   "G-HR08PM6YWZ", // GA4 — 이 스트림 하나로 통일 (개편 전 GTM/UA/다른 G-* 금지, 아래 1-0 검사)
   "code.jquery.com/jquery-3.7.1.min.js", // hkAnalTag_hub.js 가 $ 를 쓴다 — 통계 스크립트보다 앞 (아래 1-0b 순서 검사)
   "www.hankookilbo.com/Inc/Js/hkAnalTag_hub.js", // 한국일보 통계 (Hmap 1.0), www 절대 경로
   "components/interactive-embed/v2/interactive-embed.js?Nid=", // 인터랙티브 임베드 v2 (Nid 대문자 N). v1 은 <html data-*> 를 읽지 않는다
   "addon/icon_font/iconFont.css", // 아이콘 폰트 — public/addon/icon_font/ 상대 경로 (아래 4-1 검사)
-  "assets.hankookilbo.com/fonts/hk_fonts.css", // 웹폰트 CDN (템플릿 7장)
+  "assets.hankookilbo.com/fonts/hk_fonts.css", // 웹폰트 CDN (references/theming.md)
   "t1.kakaocdn.net/kakao_js_sdk/2.7.6/kakao.min.js", // 카카오 SDK v2 (인터랙티브 헤더와 동일 버전)
   "hk:nw_newsid",
   "hk:nw_pagecode",
@@ -129,10 +129,10 @@ if (fs.existsSync(distIndex)) {
   const missingMetas = REQUIRED_METAS.filter(([attr, key, value]) => !metas.some((m) => m[attr] === key && m.content === value))
     .map(([attr, key, value]) => `<meta ${attr}="${key}" content="${value}">`);
   check("공유 메타 (og:locale ko_KR, og·twitter 이미지 1200×630)", missingMetas.length ? "fail" : "pass",
-    missingMetas.length ? `누락 또는 값 다름: ${missingMetas.join(", ")} — 템플릿 5장 Layout 원문을 확인하세요.` : "");
+    missingMetas.length ? `누락 또는 값 다름: ${missingMetas.join(", ")} — assets/template/src/layouts/Layout.astro 를 확인하세요.` : "");
   const shareKinds = ["fb", "twt", "kkt", "url"].filter((k) => !new RegExp(`data-share=["']?${k}\\b`).test(html));
   check("바이라인 공유 4종 (ShareLinks.astro)", shareKinds.length ? "fail" : "pass",
-    shareKinds.length ? `빠진 버튼: ${shareKinds.join(", ")} — 템플릿 6장 ShareLinks.astro 를 바이라인에 넣으세요.` : "");
+    shareKinds.length ? `빠진 버튼: ${shareKinds.join(", ")} — assets/template/src/components/Astro/ShareLinks.astro 를 바이라인에 넣으세요.` : "");
 }
 
 // 1-0. 금지 항목: 카카오 SDK v1, 개편 전 통계 스크립트, 자체 헤더(구 ArticleBar)
@@ -143,7 +143,7 @@ if (fs.existsSync(distIndex)) {
     v1 ? "developers.kakao.com/sdk/js/kakao.min.js 가 있습니다. 인터랙티브 헤더의 v2와 충돌하므로 제거하고 Layout의 v2(t1.kakaocdn.net …/2.7.6)만 쓰세요." : "");
   const legacyAnalytics = [...new Set(html.match(/GTM-59599H7|UA-53476308-\d|G-ZPZ8BHZPSJ|G-BZHTEE2B8L|hkFunc\.js/g) || [])];
   check("개편 전 통계 스크립트 없음 (GA4는 G-HR08PM6YWZ 하나)", legacyAnalytics.length ? "fail" : "pass",
-    legacyAnalytics.length ? `개편 전 식별자가 있습니다: ${legacyAnalytics.join(", ")} — Layout.astro에서 지우고 템플릿 5장의 gtag 스니펫(G-HR08PM6YWZ)과 hkAnalTag_hub.js만 두세요.` : "");
+    legacyAnalytics.length ? `개편 전 식별자가 있습니다: ${legacyAnalytics.join(", ")} — Layout.astro에서 지우고 assets/template/src/layouts/Layout.astro 의 gtag 스니펫(G-HR08PM6YWZ)과 hkAnalTag_hub.js만 두세요.` : "");
   // jQuery 가 통계 스크립트보다 뒤면 hkAnalTag_hub.js 가 `$ is not defined` 로 멈춰 Hmap 수집이 안 된다 (운영 페이지에서 실측)
   const jqueryAt = html.indexOf("code.jquery.com/jquery-3.7.1.min.js");
   const hubAt = html.indexOf("www.hankookilbo.com/Inc/Js/hkAnalTag_hub.js");
@@ -154,7 +154,7 @@ if (fs.existsSync(distIndex)) {
   // hkFunc.js 의 shareKakaotalk 가 쓰는 Kakao.Link 는 SDK v1 API — v2(2.7.6) 에서는 없어서 호출하면 오류
   const kakaoV1Api = /Kakao\.Link\b/.test(html);
   check("카카오 v1 API(Kakao.Link) 미사용", kakaoV1Api ? "fail" : "pass",
-    kakaoV1Api ? "Kakao.Link 호출이 있습니다 (hkFunc.js 등). SDK v2 에서는 Kakao.Share.sendDefault 를 씁니다 — 템플릿 6장 ShareLinks.astro 를 쓰세요." : "");
+    kakaoV1Api ? "Kakao.Link 호출이 있습니다 (hkFunc.js 등). SDK v2 에서는 Kakao.Share.sendDefault 를 씁니다 — assets/template/src/components/Astro/ShareLinks.astro 를 쓰세요." : "");
   const ownHeader = /class="article-bar"/.test(html);
   check("자체 헤더(article-bar) 없음", ownHeader ? "fail" : "pass",
     ownHeader ? "헤더는 interactive-embed.js가 붙이는 <interactive-header> 하나만 씁니다. article-bar 를 제거하세요." : "");
@@ -181,7 +181,7 @@ if (fs.existsSync(distIndex) && fs.existsSync(metaPathForNid)) {
   }
 }
 
-// 1-1b. 공통영역 API: <html> 에 data-flow / data-view / data-state="intro" / data-gnb="transparent" / data-theme 가 허용값으로 있는지 (템플릿 0-1장)
+// 1-1b. 공통영역 API: <html> 에 data-flow / data-view / data-state="intro" / data-gnb="transparent" / data-theme 가 허용값으로 있는지 (references/template-overview.md)
 // 압축기가 따옴표를 뺄 수 있어 태그를 읽어 속성별로 본다. 이 값이 없으면 헤더는 기본값(투명 고정)으로만 서고 추천 카드는 안 뜬다
 const HTML_ATTRS = {
   "data-flow": ["scroll", "game"],
@@ -203,7 +203,7 @@ if (fs.existsSync(distIndex)) {
   }
   check("공통영역 API <html data-*> 5종", bad.length ? "fail" : "pass",
     bad.length
-      ? `${bad.join(", ")} — Layout.astro 의 <html> 에 data-flow={FLOW} data-view={VIEW} data-state="intro" data-gnb="transparent" data-theme={THEME} 를 선언하세요 (템플릿 5장).`
+      ? `${bad.join(", ")} — Layout.astro 의 <html> 에 data-flow={FLOW} data-view={VIEW} data-state="intro" data-gnb="transparent" data-theme={THEME} 를 선언하세요 (references/template-overview.md).`
       : Object.entries(htmlDataset).map(([k, v]) => `${k.slice(5)}=${v}`).join(" "));
 }
 
@@ -213,10 +213,10 @@ if (fs.existsSync(distIndex)) {
   const hosts = [...new Set((html.match(/assets(?:-dev|-stg)?\.hankookilbo\.com(?=\/components\/)/g) || []))];
   const wrong = hosts.filter((h) => h !== WC_CDN_HOST);
   check(`임베드 CDN 호스트 = ${WC_CDN_HOST}`, wrong.length ? "fail" : "pass",
-    wrong.length ? `다른 CDN 주소가 있습니다: ${wrong.join(", ")} — https://${WC_CDN_HOST} 로 바꾸세요 (템플릿 0-1장).` : "");
+    wrong.length ? `다른 CDN 주소가 있습니다: ${wrong.join(", ")} — https://${WC_CDN_HOST} 로 바꾸세요 (references/common-area.md).` : "");
 }
 
-// 1-2. 테마: <html data-theme> · class="dark" 유무 · 페이지 배경($bgBase) 밝기 셋이 같은 쪽인지 (템플릿 0-1장 "공통영역 API")
+// 1-2. 테마: <html data-theme> · class="dark" 유무 · 페이지 배경($bgBase) 밝기 셋이 같은 쪽인지 (references/common-area.md)
 // 소스는 META.ts 의 THEME 하나다. 어긋나면 코드 오류이고, 헤더 로고가 배경과 같은 색이 돼 안 보인다
 const DARK_BG_LUMINANCE_MAX = 0.5; // 0(검정) ~ 1(흰색). 이보다 어두우면 다크 배경으로 본다
 const variablesPath = path.join(rootDir, "src", "styles", "_variables.sass");
@@ -241,7 +241,7 @@ if (fs.existsSync(distIndex) && fs.existsSync(variablesPath)) {
   }
 }
 
-// 1-2b. 형식별 배선: 스크롤형은 Layout 이 wireScrollFlow() 를, 게임형은 화면 전환이 setCommon({state:"credits"}) 를 써야 추천 카드가 뜬다 (템플릿 8장·10장 패턴 E)
+// 1-2b. 형식별 배선: 스크롤형은 Layout 이 wireScrollFlow() 를, 게임형은 화면 전환이 setCommon({state:"credits"}) 를 써야 추천 카드가 뜬다 (references/common-area.md, references/patterns.md 패턴 E)
 {
   const layoutPath = path.join(rootDir, "src", "layouts", "Layout.astro");
   const flow = htmlDataset["data-flow"];
@@ -250,26 +250,26 @@ if (fs.existsSync(distIndex) && fs.existsSync(variablesPath)) {
     const hasWire = /wireScrollFlow\s*\(/.test(layout);
     if (flow === "scroll") {
       check("스크롤형 배선 (Layout wireScrollFlow)", hasWire ? "pass" : "fail",
-        hasWire ? "" : 'Layout.astro 에 `if (FLOW === "scroll") wireScrollFlow();` 가 없습니다. 내려도 GNB 가 안 숨고 추천 카드가 안 뜹니다 (템플릿 5장·8장).');
+        hasWire ? "" : 'Layout.astro 에 `if (FLOW === "scroll") wireScrollFlow();` 가 없습니다. 내려도 GNB 가 안 숨고 추천 카드가 안 뜹니다 (assets/template/src/layouts/Layout.astro).');
     } else {
       const srcFiles = [];
       const walk = (dir) => { for (const f of fs.readdirSync(dir)) { const p = path.join(dir, f); fs.statSync(p).isDirectory() ? walk(p) : /\.(astro|tsx?|jsx?)$/.test(f) && srcFiles.push(p); } };
       walk(path.join(rootDir, "src"));
       const hasCredits = srcFiles.some((f) => { const t = fs.readFileSync(f, "utf-8"); return /setCommon\s*\(/.test(t) && /["']credits["']/.test(t); });
       check("게임형 배선 (setCommon credits)", hasCredits ? "pass" : "fail",
-        hasCredits ? "" : '끝 화면 전환에 `setCommon({ state: "credits", gnb: "transparent" })` 가 없습니다. 추천 카드가 영영 안 뜹니다 (템플릿 10장 패턴 E).');
+        hasCredits ? "" : '끝 화면 전환에 `setCommon({ state: "credits", gnb: "transparent" })` 가 없습니다. 추천 카드가 영영 안 뜹니다 (references/patterns.md 패턴 E).');
     }
   }
 }
 
-// 1-3. 로딩 화면(body.loading)이 떠 있는 동안 인터랙티브 헤더를 가리는 규칙 (템플릿 0-1장 "헤더" 예외, 7장 _full_loader.sass)
+// 1-3. 로딩 화면(body.loading)이 떠 있는 동안 인터랙티브 헤더를 가리는 규칙 (references/common-area.md, assets/template/src/styles/_full_loader.sass)
 // 헤더는 .body-wrapper 밖에 fixed(z-index 650)로 붙어서 로더의 z-index로는 덮이지 않는다
 const fullLoaderPath = path.join(rootDir, "src", "styles", "_full_loader.sass");
 if (fs.existsSync(fullLoaderPath)) {
   const src = fs.readFileSync(fullLoaderPath, "utf-8");
   const ok = /body\.loading\s+interactive-header\s*\n\s*opacity:\s*0\s*!important/.test(src);
   check("로딩 중 인터랙티브 헤더 숨김 (_full_loader.sass)", ok ? "pass" : "fail",
-    ok ? "" : "_full_loader.sass에 `body.loading interactive-header` / `opacity: 0 !important` 규칙이 없거나 !important가 빠졌습니다. 스피너 위에 헤더가 겹쳐 보입니다 (visibility는 헤더 내부가 되돌리므로 opacity + !important 필수). 템플릿 7장 원문을 그대로 넣으세요.");
+    ok ? "" : "_full_loader.sass에 `body.loading interactive-header` / `opacity: 0 !important` 규칙이 없거나 !important가 빠졌습니다. 스피너 위에 헤더가 겹쳐 보입니다 (visibility는 헤더 내부가 되돌리므로 opacity + !important 필수). assets/template/src/styles/_full_loader.sass 를 복사하세요.");
 } else {
   check("로딩 중 인터랙티브 헤더 숨김 (_full_loader.sass)", "warn", "src/styles/_full_loader.sass를 찾을 수 없어 확인을 건너뜀");
 }
@@ -283,7 +283,7 @@ if (fs.existsSync(astroConfigPath)) {
   // 로컬 포트 3000 고정 (CDN·추천 카드 API CORS 허용 origin). 상수로 빼 둔 경우(LOCAL_PORT = 3000)도 인정
   const portOk = /port:\s*3000\b/.test(cfg) || (/port:\s*LOCAL_PORT\b/.test(cfg) && /LOCAL_PORT\s*=\s*3000\b/.test(cfg));
   check("astro.config.mjs 로컬 포트 3000", portOk ? "pass" : "warn",
-    portOk ? "" : "server.port가 3000이 아닙니다. 기본값 4321로 띄우면 추천 카드 API가 CORS로 막힙니다. 템플릿 3장처럼 server: { port: 3000 }을 넣으세요.");
+    portOk ? "" : "server.port가 3000이 아닙니다. 기본값 4321로 띄우면 추천 카드 API가 CORS로 막힙니다. assets/template/astro.config.mjs 처럼 server: { port: 3000 }을 넣으세요.");
 } else {
   check("astro.config.mjs 존재", "warn", "astro.config.mjs를 찾을 수 없어 outDir 체크를 건너뜀");
 }
@@ -302,7 +302,7 @@ if (!fs.existsSync(metaPath)) {
   );
 }
 
-// 4-0. 공유 이미지 2장 — 파일이 있고 PNG 이며 픽셀 크기가 정확한지 (템플릿 11장)
+// 4-0. 공유 이미지 2장 — 파일이 있고 PNG 이며 픽셀 크기가 정확한지 (references/template-overview.md 「public 필수 파일」)
 const SHARE_IMAGES = [
   { file: "ogimage.png", width: 1200, height: 630, label: "페이스북·X" },
   { file: "ogimage_kakao.png", width: 800, height: 800, label: "카카오톡" },

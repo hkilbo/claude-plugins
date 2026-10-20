@@ -1,0 +1,32 @@
+---
+//@ts-nocheck
+import {
+  HTML_TITLE,
+  BYLINE_MEMBERS,
+  POST_DATE,
+} from "../../utils/constant/META";
+import ShareLinks from "./ShareLinks.astro";
+---
+
+<div class="byline">
+  <!-- 관련 기사 카드는 넣지 않는다. 추천 기사는 interactive-embed.js 의 하단 추천 카드가 맡는다 -->
+  <div class="wrapper">
+    <div class="logo">
+      <div class="title"><span>{HTML_TITLE}</span></div>
+    </div>
+    <div class="post-date"><p>Posted by {POST_DATE}</p></div>
+
+    {
+      BYLINE_MEMBERS.map((item) => (
+        <dl>
+          <dt>{item.dept}</dt>
+          <dd>{item.members}</dd>
+        </dl>
+      ))
+    }
+
+    <ShareLinks class="share-tools" />
+
+    <p class="copy">세상을 보는 균형, 한국일보 Copyright © Hankookilbo</p>
+  </div>
+</div>

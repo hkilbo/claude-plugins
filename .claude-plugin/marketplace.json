@@ -29,7 +29,7 @@
     {
       "name": "hankookilbo-interactives",
       "description": "한국일보 인터랙티브 기사 페이지(Astro + React)를 공식 템플릿으로 만듭니다. 기획 인터뷰부터 프로젝트 생성, 자체 점검(필수 스크립트·반응형 스크린샷), 완료 문서화, 전달용 zip 패키징까지 진행하고, 캐러셀·스크롤·지도·상태 공유에 쓸 라이브러리를 정해진 규칙대로 고릅니다. 사내 제작자와 외주 제작사 공용입니다.",
-      "version": "0.3.0",
+      "version": "0.4.0",
       "source": "./plugins/hankookilbo-interactives",
       "author": {
         "name": "한국일보"

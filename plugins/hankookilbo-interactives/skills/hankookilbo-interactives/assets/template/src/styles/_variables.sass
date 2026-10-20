@@ -1,0 +1,42 @@
+@use 'sass:math'
+
+// size
+$wrapper-width: 900px
+
+// font family — 파일은 사내 CDN(hk_fonts.css)이 제공한다. 이름은 여기서만 정한다 (7장 참고)
+$fontBase: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, sans-serif
+$fontSerif: 'NanumMyeongjo', serif
+
+// font size: PC 기준 이름, 모바일에서 clamp로 축소
+$fontCalc: calc( -0.5214rem + 3.6952vw)
+$font12: clamp(10px, $fontCalc, 12px)
+$font13: clamp(11px, $fontCalc, 13px)
+$font14: clamp(12px, $fontCalc, 14px)
+$font15: clamp(13px, $fontCalc, 15px)
+$font16: clamp(14px, $fontCalc, 16px)
+$font18: clamp(15px, $fontCalc, 18px)
+$font20: clamp(18px, $fontCalc, 20px)
+$font22: clamp(20px, $fontCalc, 22px)
+$font26: clamp(22px, $fontCalc, 26px)
+$font32: clamp(24px, $fontCalc, 32px)
+$font36: clamp(26px, $fontCalc, 36px)
+$font38: clamp(28px, $fontCalc, 38px)
+
+// colors (다크 테마 기본, 프로젝트마다 변경). 밝은 배경으로 바꾸면 META.ts 의 THEME 도 "light" 로 (0-1장 "공통영역 API")
+$bgBase: #111
+$bgBaseBlur: rgba(255,255,255,0.6)
+$fontColBase: #fff
+
+// z-index
+$z-gnb: 100
+$z-main: 10
+$z-layer: 200
+
+// utils
+$easing: cubic-bezier(0.17, 0.67, 0.21, 1)
+
+// media query
+$mobile-width: 800
+$tablet-limit: 1200
+$tablet-width: 1440
+$tablet-ratio: math.div($tablet-width, 100)

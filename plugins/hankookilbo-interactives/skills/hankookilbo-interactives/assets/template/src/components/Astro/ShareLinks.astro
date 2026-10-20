@@ -1,0 +1,73 @@
+---
+//@ts-nocheck
+// 공유 4종 — 상단 인터랙티브 헤더(header.js)와 같은 규칙으로 동작한다. 값은 빌드 때 정하지 않고 누를 때 읽는다
+const { class: className = "share-tools" } = Astro.props;
+---
+
+<ul class={className}>
+  <li><button type="button" class="icon-hk-sns-facebook" data-share="fb" title="페이스북으로 공유" aria-label="페이스북으로 공유"></button></li>
+  <li><button type="button" class="icon-hk-sns-twitter" data-share="twt" title="X로 공유" aria-label="X로 공유"></button></li>
+  <li><button type="button" class="icon-hk-sns-kakao" data-share="kkt" title="카카오톡으로 공유" aria-label="카카오톡으로 공유"></button></li>
+  <li><button type="button" class="icon-hk-sns-link" data-share="url" title="URL 복사" aria-label="URL 복사"></button></li>
+</ul>
+
+<script is:inline>
+  // 상단 인터랙티브 헤더(header.js)의 공유와 똑같이 동작한다 — 주소·제목·설명·이미지를 같은 곳에서 읽는다.
+  //   주소: 현재 페이지 origin + pathname (쿼리·해시 제외). URL 복사만 location.href 전체
+  //   제목·설명·카카오 이미지: <head> 의 og:title · og:description · kakao_og_image 메타 (5장 Layout)
+  //   앱 웹뷰(window.ReactNativeWebView): 카카오만 앱으로 넘긴다. 페이스북·X 는 새 창
+  //   카카오는 SDK v2(Kakao.Share). hkFunc.js 의 Kakao.Link(v1)는 v2 에서 undefined 라 쓰지 않는다
+  (function () {
+    var meta = function (selector) {
+      var el = document.querySelector(selector);
+      return (el && el.getAttribute("content")) || "";
+    };
+
+    function shareKakao(url) {
+      var title = meta('meta[property="og:title"]') || document.title;
+      var description = meta('meta[property="og:description"]') || meta('meta[name="description"]');
+      var imageUrl = meta('meta[name="kakao_og_image"]') || meta('meta[property="og:image"]');
+      if (window.ReactNativeWebView) {
+        window.ReactNativeWebView.postMessage(
+          JSON.stringify({ type: "KAKAO_SHARE", title: title, description: description, url: url, imageUrl: imageUrl })
+        );
+        return;
+      }
+      // Kakao.Share 는 init 뒤에 생긴다 — 존재 확인보다 init 이 먼저
+      if (window.Kakao && !window.Kakao.isInitialized()) window.Kakao.init("e62df5186f0758def8f14c53e64d7b9d");
+      if (!window.Kakao || !window.Kakao.Share) {
+        alert("카카오 공유를 사용할 수 없습니다.");
+        return;
+      }
+      try {
+        window.Kakao.Share.sendDefault({
+          objectType: "feed",
+          content: { title: title, description: description, imageUrl: imageUrl, link: { mobileWebUrl: url, webUrl: url } },
+          buttons: [{ title: "자세히 보기", link: { mobileWebUrl: url, webUrl: url } }],
+        });
+      } catch (e) {
+        alert("카카오 공유를 사용할 수 없습니다.");
+      }
+    }
+
+    function copyUrl() {
+      var text = location.href;
+      var done = function () { alert("주소가 복사되었습니다."); };
+      var fail = function () { alert("복사 실패!"); };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, fail);
+      else fail();
+    }
+
+    document.querySelectorAll("[data-share]").forEach(function (button) {
+      button.addEventListener("click", function (event) {
+        event.preventDefault();
+        var url = location.origin + location.pathname;
+        var sns = button.dataset.share;
+        if (sns === "fb") window.open("https://www.facebook.com/sharer/sharer.php?u=" + encodeURIComponent(url), "_blank");
+        else if (sns === "twt") window.open("https://twitter.com/intent/tweet?text=" + encodeURIComponent(document.title) + "%20" + encodeURIComponent(url), "_blank");
+        else if (sns === "kkt") shareKakao(url);
+        else if (sns === "url") copyUrl();
+      });
+    });
+  })();
+</script>

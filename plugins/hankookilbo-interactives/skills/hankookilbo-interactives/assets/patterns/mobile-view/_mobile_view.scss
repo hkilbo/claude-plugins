@@ -1,0 +1,35 @@
+// src/styles/_mobile_view.scss — 패턴 F 에서만 style.sass 에 @import
+:root[data-view="mobile"] {
+  --gnb-h: 64px;
+  --site-bg: #eee;                       // 바깥 판 (브라우저 라이트)
+  @media (prefers-color-scheme: dark) { --site-bg: #2a2a2a; }
+  @media (min-width: 1280px) { --gnb-h: 76px; }
+}
+@media (min-width: 690px) {
+  :root[data-view="mobile"] .body-wrapper {
+    background: var(--site-bg);
+    display: grid;
+    place-items: center;
+    padding-top: var(--gnb-h);
+  }
+  :root[data-view="mobile"] .shell {      // 떠 있는 휴대폰 화면. 콘텐츠 루트에 class="shell"
+    --shell-h: min(800px, calc(100dvh - var(--gnb-h)));
+    width: calc(var(--shell-h) * 0.6);
+    height: var(--shell-h);
+    overflow: hidden;
+    border-radius: 24px;                 // 피그마 184:745 — 태블릿 24, PC 32
+    box-shadow: 1px 10px 24px 2px rgba(0, 0, 0, 0.12);
+  }
+}
+@media (min-width: 1280px) {
+  :root[data-view="mobile"] .shell { border-radius: 32px; }
+}
+// 화면이 너무 작을 때 (태블릿 높이 564 미만 · PC 576 미만 · 가로로 돌린 휴대폰): 안내가 덮는다. 색은 바깥 판을 따른다
+.hk-small { display: none; }
+@media (min-width: 690px) and (max-width: 1279.98px) and (max-height: 563.98px), (min-width: 1280px) and (max-height: 575.98px) {
+  :root[data-view="mobile"] .hk-small {
+    display: grid; place-items: center; position: fixed; inset: var(--gnb-h) 0 0; z-index: 640;
+    background: var(--site-bg); color: #1a1a1a; text-align: center;
+    @media (prefers-color-scheme: dark) { color: #fff; }
+  }
+}

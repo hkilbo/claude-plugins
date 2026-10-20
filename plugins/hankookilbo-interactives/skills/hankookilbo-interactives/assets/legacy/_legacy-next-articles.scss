@@ -1,0 +1,26 @@
+// 구 "인터랙티브 더보기" 위젯(hkUtilMoreInteractive) 테마 오버라이드. interactive-embed.js 를 쓰는 새 프로젝트에는 해당 없음 — references/legacy.md
+.next-articles.globalVariable {
+  background: $bgBaseBlur;
+  color: $fontColBase;
+
+  h2 {
+    color: inherit;
+    span {
+      color: inherit;
+      font-family: $fontBase;
+      font-weight: 700;
+    }
+  }
+  .next-articles-close::after,
+  .next-articles-close::before {
+    border-top: 2px solid $fontColBase;
+  }
+  .all-link {
+    color: $fontColBase;
+    border: 1px solid $fontColBase;
+    font-family: $fontBase;
+    span.icon-hk-arrow_r:before {
+      color: $fontColBase;
+    }
+  }
+}
