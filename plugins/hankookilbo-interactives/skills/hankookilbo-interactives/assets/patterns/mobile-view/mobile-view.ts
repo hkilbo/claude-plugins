@@ -1,7 +1,7 @@
-// 패턴 F 의 <script> — 게임형이면 바깥 GNB 가 브라우저 테마를 따르고, 안내가 떠 있는 동안 시계를 멈춘다
+// 패턴 F 의 <script> (index.astro). 게임형일 때만: 폭 690 이상에서 바깥 GNB 가 브라우저 라이트/다크를 따른다.
+// 스크롤형 모바일뷰는 할 일이 없다 — Layout 의 wireScrollFlow() 가 .shell 안 스크롤과 바이라인 위치를 맡는다.
+// "화면이 너무 작아요" 안내는 CSS 가 띄운다. 타이머가 있는 게임이면 createPause() 가 그동안 멈춘다 (패턴 E).
 import { syncOuterTheme } from "../lib/js/_comm/hkCommon.js";
 import { FLOW, THEME } from "../utils/constant/META";
+
 if (FLOW === "game") syncOuterTheme(THEME);
-const tooSmall = matchMedia("(min-width: 690px) and (max-width: 1279.98px) and (max-height: 563.98px), (min-width: 1280px) and (max-height: 575.98px)");
-const syncSmall = () => window.gameClock?.hold("small", tooSmall.matches);
-tooSmall.addEventListener("change", syncSmall); syncSmall();

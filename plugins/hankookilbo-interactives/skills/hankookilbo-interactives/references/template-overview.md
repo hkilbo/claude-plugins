@@ -152,7 +152,7 @@ Vue, Svelte 등 다른 프레임워크는 쓰지 않는다. 정적 HTML은 `.ast
 │   │   └── Layout.astro            # <head> 메타, 애널리틱스, body-wrapper
 │   ├── lib/js/_comm/
 │   │   ├── common.js               # removeLoader
-│   │   ├── hkCommon.js             # 공통영역(헤더·추천) <html data-*> 제어 — setCommon, wireScrollFlow, onMenu
+│   │   ├── hkCommon.js             # 공통영역(헤더·추천) <html data-*> 제어 — setCommon, wireScrollFlow, placeByline, createPause
 │   │   ├── ioScroll.js             # IntersectionObserver 기반 스크롤 유틸
 │   │   └── util.js                 # addComma, chunkArray
 │   ├── pages/

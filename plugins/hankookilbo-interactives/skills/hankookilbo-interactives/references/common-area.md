@@ -44,7 +44,7 @@
 
 | 이벤트 | `detail` | 시점 |
 | --- | --- | --- |
-| `hk-interactive-menu` | `{ open: boolean }` | `data-gnb="menu"`에서 로고 버튼·✕·Esc로 GNB를 열고 닫을 때. `open`이면 게임 시계를 멈춘다 |
+| `hk-interactive-menu` | `{ open: boolean }` | `data-gnb="menu"`에서 로고 버튼·✕·Esc로 GNB를 열고 닫을 때. 타이머가 있는 게임은 `open`인 동안 멈춘다(`createPause`가 자동 처리) |
 | `hk-interactive-recommend` | `{ state: "shown" \| "dismissed" }` | 추천 카드 노출 / 닫기 |
 
 형식별로 언제 어떤 값을 쓰는지는 `patterns.md` 패턴 B(스크롤형)·E(게임형)·F(모바일뷰)에 있다. 요약:
@@ -84,9 +84,11 @@
 | 함수 | 언제 | 하는 일 |
 | --- | --- | --- |
 | `setCommon({ state, gnb, theme })` | 게임형 화면 전환마다 | `<html data-*>`를 한 번에 쓴다. `null`이면 속성을 지운다 |
-| `wireScrollFlow({ scroller, creditsEl, ratio = 0.4 })` | 스크롤형. `Layout.astro`가 `FLOW === "scroll"`일 때 자동 호출 | 맨 위 `intro·transparent`, 내리면 `hidden`, 올리면 `solid`(`state=play`). 바이라인(`.byline`) 윗선이 화면 아래 40% 선에 닿거나 맨 아래면 `credits·transparent`. credits 동안은 스크롤이 GNB를 건드리지 않는다 |
-| `onMenu(cb)` | 게임형, 시계가 있을 때 | `hk-interactive-menu` 수신. `cb(open)` — `open`이면 시계 정지 |
-| `onRecommend(cb)` | 필요할 때 | `hk-interactive-recommend` 수신. `cb("shown" \| "dismissed")` |
+| `wireScrollFlow({ scroller, creditsEl, ratio = 0.4 })` | 스크롤형. `Layout.astro`가 `FLOW === "scroll"`일 때 자동 호출 | 맨 위 `intro·transparent`, 내리면 `hidden`, 올리면 `solid`(`state=play`). 바이라인(`.byline`) 윗선이 화면 아래 40% 선에 닿거나 맨 아래면 `credits·transparent`. credits 동안은 스크롤이 GNB를 건드리지 않는다. 모바일뷰면 기본 scroller가 `.shell`이고 바이라인을 그 안으로 옮긴다. **해제 함수를 돌려준다** — 형식을 새로고침 없이 바꿀 때만 쓴다 |
+| `placeByline(target)` | 게임형 크레딧 화면 | 바이라인을 `target` 안으로 옮긴다 (Layout은 본문 뒤에 렌더) |
+| `createPause({ onChange })` | **타이머·애니메이션 루프가 있는 게임만.** 없으면 부르지 않는다 | 멈출 이유 목록. `pause.paused`, `pause.hold(이유, on)`. 로고 버튼 메뉴(`menu`)와 모바일뷰 "화면이 너무 작아요"(`small`)를 자동으로 건다 |
+| `onMenu(cb)` | 메뉴 열림을 직접 받고 싶을 때 (보통은 `createPause`로 충분) | `hk-interactive-menu` 수신. `cb(open)`. 해제 함수를 돌려준다 |
+| `onRecommend(cb)` | 필요할 때 | `hk-interactive-recommend` 수신. `cb("shown" \| "dismissed")`. 해제 함수를 돌려준다 |
 | `syncOuterTheme(theme)` | **모바일뷰 + 게임형만** (패턴 F) | 폭 690 이상에서 `data-theme`을 브라우저 라이트/다크로, 휴대폰 폭에서 `THEME`로 되돌린다. `--hk-gnb-solid-bg`(#eee/#2a2a2a)도 같이 |
 
 60% 규칙을 바꾸고 싶으면 `wireScrollFlow({ ratio: 0.5 })`처럼 인자만 바꾼다. 콘텐츠 스크롤 코드(IO·ScrollTrigger)에서 `dataset.gnb`를 직접 쓰지 않는다.
