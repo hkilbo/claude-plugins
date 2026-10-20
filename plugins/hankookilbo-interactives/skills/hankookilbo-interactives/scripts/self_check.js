@@ -15,9 +15,8 @@
 const fs = require("fs");
 const path = require("path");
 
-// 인터랙티브 임베드(헤더·추천 카드) CDN 호스트. references/common-area.md 와 같은 값이어야 한다.
-// TODO(release): v2 운영 승격 후 "assets.hankookilbo.com" 으로 바꾼다
-const WC_CDN_HOST = "assets-dev.hankookilbo.com";
+// 인터랙티브 임베드(헤더·추천 카드) CDN 호스트 — 운영만. references/common-area.md 와 같은 값이어야 한다.
+const WC_CDN_HOST = "assets.hankookilbo.com";
 
 // references/template-overview.md 「빌드 후 자동 검증」과 동일한 목록
 const REQUIRED_DIST_KEYS = [
@@ -207,7 +206,7 @@ if (fs.existsSync(distIndex)) {
       : Object.entries(htmlDataset).map(([k, v]) => `${k.slice(5)}=${v}`).join(" "));
 }
 
-// 1-1c. 임베드 CDN 호스트는 WC_CDN_HOST 하나만. 다른 환경 주소가 섞이면 배포 페이지가 엉뚱한 서버를 부른다
+// 1-1c. 임베드 CDN 은 운영(WC_CDN_HOST)만. dev·stg 주소가 남아 있으면 배포 페이지가 개발 서버를 부른다
 if (fs.existsSync(distIndex)) {
   const html = fs.readFileSync(distIndex, "utf-8");
   const hosts = [...new Set((html.match(/assets(?:-dev|-stg)?\.hankookilbo\.com(?=\/components\/)/g) || []))];

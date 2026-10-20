@@ -61,7 +61,7 @@
 스크립트 한 줄로 붙이는 로더다. 구 `hkUtilMoreInteractive.min.js`(더보기 위젯)를 대체한다.
 
 ```html
-<script is:inline src={`https://assets-dev.hankookilbo.com/components/interactive-embed/v2/interactive-embed.js?Nid=${ARTICLE_KEY}`}></script>
+<script is:inline src={`https://assets.hankookilbo.com/components/interactive-embed/v2/interactive-embed.js?Nid=${ARTICLE_KEY}`}></script>
 ```
 
 - **`Nid=기사ID`는 필수**다. 값은 `META.ts`의 `ARTICLE_KEY`(A + 19자리)를 그대로 넣는다. 파라미터 이름은
@@ -70,7 +70,7 @@
   `body` 맨 앞에 붙이고 `header.js`로 살린다 ② `Nid`가 있으면 `interactive-recommend.js?Nid=…`를 로드해
   화면 하단 추천 카드를 띄운다. 추천 후보에서 **현재 기사(`Nid`)를 제외**하므로 값이 틀리면 자기 기사가 추천에 뜬다.
 - `data-scroll-container`는 **쓰지 않는다**(v1 전용이었다). v2 헤더·카드는 스크롤을 읽지 않고 `<html data-*>`만 본다.
-- **CDN 주소는 `https://assets-dev.hankookilbo.com` 한 곳만 쓴다.** 다른 환경 주소를 섞지 않는다 (`self_check.js`가 검사). <!-- TODO(release): v2 운영 승격 후 assets.hankookilbo.com 으로 교체 -->
+- **CDN은 운영 주소 `https://assets.hankookilbo.com` 하나만 쓴다.** `assets-dev.`, `assets-stg.` 주소는 로컬 테스트용으로도 소스에 남기지 않는다 (`self_check.js`가 실패 처리).
 - 추천 카드만 끄려면 `<script … data-recommend="false">`. 헤더는 끌 수 없다.
 - `v2` 별칭 경로라 프론트개발팀이 패치를 승격해도 소비 코드는 바뀌지 않는다. 버전을 고정하지 않는다. `v1`은 `<html data-*>`를 읽지 않는 구 버전이다 — 새 프로젝트는 쓰지 않는다.
 - 로컬(`localhost:3000`)과 `interactive.hankookilbo.com`에서 헤더가 안 뜨고 콘솔에 `Access to fetch … blocked by CORS`가
