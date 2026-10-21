@@ -19,8 +19,8 @@
   overflow-y: auto;
   &.is-on { display: flex; }
 }
-// 모바일뷰 690 이상: GNB 가 떠 있는 화면 바깥이라 위 여백이 작다
-@media (min-width: 690px) {
+// 모바일뷰 481 이상(헤더의 interactive-tab): GNB 가 떠 있는 화면 바깥이라 위 여백이 작다
+@media (min-width: 481px) {
   :root[data-view="mobile"] .screen { padding-top: 28px; }
 }
 .credits-actions { display: flex; justify-content: center; gap: 8px; }

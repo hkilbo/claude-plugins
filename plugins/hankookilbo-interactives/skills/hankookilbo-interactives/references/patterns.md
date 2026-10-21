@@ -82,14 +82,14 @@ pause.hold("feedback", true);         // 게임 자체 사정도 같은 방식. 
 
 ## 패턴 F. 모바일뷰 — `VIEW = "mobile"`
 
-PC·태블릿에서도 **세로 3:5 휴대폰 화면(최대 480×800)을 GNB 아래 가운데에 띄우는** 형식. 주로 게임형과 조합한다. 폭 690 미만(휴대폰)에서는 화면이 창을 꽉 채우고 일반뷰와 같아진다.
+PC·태블릿에서도 **세로 3:5 휴대폰 화면(최대 480×800)을 GNB 아래 가운데에 띄우는** 형식. 주로 게임형과 조합한다. 폭 481 미만(휴대폰, 가이드의 Mo ≤480)에서는 화면이 창을 꽉 채우고 일반뷰와 같아진다.
 
-- `assets/patterns/mobile-view/_mobile_view.scss`를 `src/styles/`에 복사하고 `style.sass`에 `@import 'mobile_view'`. 콘텐츠 루트에 `class="shell"`. 폭 690 이상에서 `.body-wrapper`가 바깥 판(`--site-bg`, 브라우저 라이트 #eee / 다크 #2a2a2a)이 되고 `.shell`이 3:5(최대 800 높이)로 가운데 뜬다. 모서리 태블릿 24 / PC 32.
-- 게임형이면 `assets/patterns/mobile-view/mobile-view.ts` 내용을 `index.astro`의 `<script>`에 붙인다(`syncOuterTheme(THEME)` 한 줄 — 폭 690 이상에서 바깥 GNB가 브라우저 테마를 따른다). 경로가 `src/pages/` 기준이라 파일째 다른 곳에 두면 import 경로가 깨진다.
+- `assets/patterns/mobile-view/_mobile_view.scss`를 `src/styles/`에 복사하고 `style.sass`에 `@import 'mobile_view'`. 콘텐츠 루트에 `class="shell"`. 폭 481 이상에서 `.body-wrapper`가 바깥 판(`--site-bg`, 브라우저 라이트 #eee / 다크 #2a2a2a)이 되고 `.shell`이 3:5(최대 800 높이)로 가운데 뜬다. 모서리 태블릿 24 / PC 32.
+- 게임형이면 `assets/patterns/mobile-view/mobile-view.ts` 내용을 `index.astro`의 `<script>`에 붙인다(`syncOuterTheme(THEME)` 한 줄 — 폭 481 이상에서 바깥 GNB가 브라우저 테마를 따른다). 경로가 `src/pages/` 기준이라 파일째 다른 곳에 두면 import 경로가 깨진다.
 - **스크롤형 모바일뷰**는 프로젝트가 할 일이 없다. `_mobile_view.scss`가 `.shell`을 한 화면 높이 + `overflow-y: auto`로 만들고, `Layout.astro`의 `wireScrollFlow()`가 `data-view="mobile"`을 보고 `.shell`을 스크롤 기준으로 삼으며 바이라인을 그 안으로 옮긴다. 본문은 `<main class="shell">` 안에 둔다.
 - "화면이 너무 작아요" 동안 게임을 멈추는 것은 패턴 E의 `createPause()`가 맡는다(타이머가 있을 때만). 조건은 `hkCommon.js`의 `TOO_SMALL_QUERY`와 `_mobile_view.scss`가 같다.
 - `<div class="hk-small"><p>화면이 너무 작아요</p><p>창을 키우거나 휴대폰을 세로로 돌려 주세요</p></div>`를 `.body-wrapper` 안에 둔다. 문구는 디자인 확정값으로 바꾼다.
-- 폭 690 이상에서 GNB는 헤더가 CSS로 바깥에 고정한다(`data-gnb`가 `menu`여도 로고 버튼 없음). 프로젝트가 따로 할 일은 없다.
+- 폭 481 이상에서 GNB는 헤더가 CSS로 바깥에 고정한다(`data-gnb`가 `menu`여도 로고 버튼 없음). 프로젝트가 따로 할 일은 없다.
 - 스크롤형 모바일뷰(`FLOW="scroll"`)는 `syncOuterTheme`를 부르지 않는다. `THEME` 고정이다.
 
 ## 공통 JS 유틸 (`assets/template/src/lib/js/_comm/`)

@@ -30,7 +30,7 @@
 | `<html>` 속성 | 값 | 없을 때 | 의미 |
 | --- | --- | --- | --- |
 | `data-flow` | `game` \| `scroll` | `scroll` | 인터랙티브 형태. `META.ts`의 `FLOW`. 표기용 — 헤더 동작은 이 값으로 갈리지 않는다 |
-| `data-view` | `mobile` \| `normal` | `normal` | 뷰포트 형식. `META.ts`의 `VIEW`. `mobile`이면 폭 690 이상에서 GNB가 떠 있는 휴대폰 화면 바깥에 항상 보인다 |
+| `data-view` | `mobile` \| `normal` | `normal` | 뷰포트 형식. `META.ts`의 `VIEW`. `mobile`이면 폭 481 이상에서 GNB가 떠 있는 휴대폰 화면 바깥에 항상 보인다 |
 | `data-state` | `intro` \| `play` \| `credits` | `intro` | 진행 단계. **추천 카드는 `credits`에서만 뜬다** |
 | `data-gnb` | `transparent` \| `solid` \| `hidden` \| `menu` | `transparent` | GNB 상태. `menu` = GNB 숨김 + 왼쪽 위 로고 버튼(누르면 GNB가 내려옴). `hidden` = 버튼 없이 숨김만 |
 | `data-theme` | `light` \| `dark` | `html.dark` 클래스 → 없으면 `light` | `META.ts`의 `THEME`. 투명 GNB면 아이콘 색, solid면 바탕 + 아이콘 색, 추천 카드 색 |
@@ -89,7 +89,7 @@
 | `createPause({ onChange })` | **타이머·애니메이션 루프가 있는 게임만.** 없으면 부르지 않는다 | 멈출 이유 목록. `pause.paused`, `pause.hold(이유, on)`. 로고 버튼 메뉴(`menu`)와 모바일뷰 "화면이 너무 작아요"(`small`)를 자동으로 건다 |
 | `onMenu(cb)` | 메뉴 열림을 직접 받고 싶을 때 (보통은 `createPause`로 충분) | `hk-interactive-menu` 수신. `cb(open)`. 해제 함수를 돌려준다 |
 | `onRecommend(cb)` | 필요할 때 | `hk-interactive-recommend` 수신. `cb("shown" \| "dismissed")`. 해제 함수를 돌려준다 |
-| `syncOuterTheme(theme)` | **모바일뷰 + 게임형만** (패턴 F) | 폭 690 이상에서 `data-theme`을 브라우저 라이트/다크로, 휴대폰 폭에서 `THEME`로 되돌린다. `--hk-gnb-solid-bg`(#eee/#2a2a2a)도 같이 |
+| `syncOuterTheme(theme)` | **모바일뷰 + 게임형만** (패턴 F) | 폭 481 이상에서 `data-theme`을 브라우저 라이트/다크로, 휴대폰 폭에서 `THEME`로 되돌린다. `--hk-gnb-solid-bg`(#eee/#2a2a2a)도 같이 |
 
 60% 규칙을 바꾸고 싶으면 `wireScrollFlow({ ratio: 0.5 })`처럼 인자만 바꾼다. 콘텐츠 스크롤 코드(IO·ScrollTrigger)에서 `dataset.gnb`를 직접 쓰지 않는다.
 

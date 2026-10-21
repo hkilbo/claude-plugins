@@ -66,7 +66,7 @@ export function onRecommend(cb) {
 
 /** 모바일뷰 "화면이 너무 작아요" 조건. _mobile_view.scss 의 미디어 쿼리와 같아야 한다 */
 export const TOO_SMALL_QUERY =
-  "(min-width: 690px) and (max-width: 1279.98px) and (max-height: 563.98px), (min-width: 1280px) and (max-height: 575.98px)";
+  "(min-width: 481px) and (max-width: 1279.98px) and (max-height: 563.98px), (min-width: 1280px) and (max-height: 575.98px)";
 
 /**
  * 게임 일시정지 — **타이머·애니메이션 루프가 있는 게임만** 쓴다. 없으면 부르지 않아도 된다.
@@ -102,11 +102,11 @@ export function createPause({ onChange } = {}) {
 }
 
 /**
- * 모바일뷰(VIEW="mobile") + 게임형(FLOW="game") 의 PC·태블릿(폭 690 이상)만 바깥 GNB 가 브라우저 라이트/다크를 따른다.
+ * 모바일뷰(VIEW="mobile") + 게임형(FLOW="game") 의 PC·태블릿(폭 481 이상)만 바깥 GNB 가 브라우저 라이트/다크를 따른다.
  * 휴대폰 폭에서는 META.THEME 로 돌아온다. 폭·스킴 분기는 헤더가 아니라 여기(호스트)서 한다. 패턴 F 에서만 호출한다.
  */
 export function syncOuterTheme(theme) {
-  const wide = matchMedia("(min-width: 690px)");
+  const wide = matchMedia("(min-width: 481px)"); // 헤더의 interactive-tab 브레이크포인트와 같다
   const scheme = matchMedia("(prefers-color-scheme: dark)");
   const apply = () => {
     const t = wide.matches ? (scheme.matches ? "dark" : "light") : theme;
