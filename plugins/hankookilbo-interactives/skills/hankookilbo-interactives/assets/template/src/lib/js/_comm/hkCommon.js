@@ -1,5 +1,7 @@
 // 한국일보 공통영역(인터랙티브 헤더·추천 카드) 제어. 상태는 <html data-*> 하나로 선언한다 (references/common-area.md).
 const root = document.documentElement;
+/** 스크롤형에서 내림/올림을 판정하는 최소 이동량(px) */
+const SCROLL_DIR_PX = 24;
 
 /** 진행 단계·GNB 를 한 번에 쓴다. 예: setCommon({ state: "credits", gnb: "transparent" }). 값이 null 이면 속성을 지운다 */
 export function setCommon(attrs) {
@@ -26,9 +28,11 @@ export function wireScrollFlow({ scroller, creditsEl, ratio = 0.4 } = {}) {
   scroller ??= shell ?? document.querySelector(".body-wrapper");
   creditsEl ??= shell ? placeByline(shell) : document.querySelector(".byline");
   if (!scroller || !creditsEl) return () => {};
+  // 방향 판정은 SCROLL_DIR_PX 이상 움직였을 때만 — 트랙패드 관성 꼬리(몇 px)로 GNB 가 숨었다 나타나지 않게
   let last = scroller.scrollTop;
   const onScroll = () => {
     const y = scroller.scrollTop;
+    if (Math.abs(y - last) < SCROLL_DIR_PX && y > 8) return;
     if (root.dataset.state !== "credits" && y !== last) {
       setCommon(y <= 8 ? { state: "intro", gnb: "transparent" } : { state: "play", gnb: y > last ? "hidden" : "solid" });
     }
