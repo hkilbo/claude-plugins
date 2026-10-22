@@ -6,6 +6,7 @@
     "name": "한국일보",
     "url": "https://github.com/hkilbo"
   },
+  "allowCrossMarketplaceDependenciesOn": ["claude-plugins-official"],
   "plugins": [
     {
       "name": "hankookilbo-slides",

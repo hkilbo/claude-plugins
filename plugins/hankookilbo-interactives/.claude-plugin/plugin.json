@@ -14,6 +14,7 @@
     "외주"
   ],
   "license": "MIT",
+  "dependencies": ["frontend-design@claude-plugins-official"],
   "homepage": "https://github.com/hkilbo/claude-plugins/tree/main/plugins/hankookilbo-interactives",
   "repository": "https://github.com/hkilbo/claude-plugins"
 }

@@ -12,7 +12,7 @@
 /plugin install hankookilbo-interactives@hankookilbo
 ```
 
-설치 후 **새 세션부터** 스킬이 인식됩니다.
+설치 후 **새 세션부터** 스킬이 인식됩니다. 디자인 방향을 잡는 Anthropic 공식 `frontend-design` 플러그인이 함께 설치됩니다.
 
 ## 무엇을 할 수 있나
 
