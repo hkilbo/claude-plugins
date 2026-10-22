@@ -1,72 +1,7 @@
-@import 'variables'
-@import 'utils'
+// 진입점. @use 는 파일 맨 위에만 올 수 있고 적은 순서대로 CSS 가 나온다 — 리셋(base)이 항상 먼저
+@use 'base'
+@use 'full_loader'
+@use 'byline'
 
-*
-  box-sizing: border-box
-
-// 모바일 카카오/사파리 인앱 브라우저 상·하단 NAV바 고정: html/body는 스크롤하지 않는다
-html, body
-  height: 100%
-  overflow: hidden
-  overflow-x: hidden
-  overscroll-behavior-y: none
-
-body
-  margin: 0
-  padding: 0
-  font-family: $fontBase
-  background-color: $bgBase
-  color: $fontColBase
-  min-height: 100%
-
-  // 실제 스크롤 컨테이너
-  .body-wrapper
-    position: fixed
-    top: 0
-    padding: 0
-    width: 100%
-    height: 100%
-    overflow-y: scroll
-    overflow-x: hidden
-    background-color: $bgBase
-    -webkit-overflow-scrolling: touch
-    border: 1px transparent solid
-    border-right: unset
-
-main
-  display: block
-  background-color: $bgBase
-
-a
-  color: inherit
-  text-decoration: none
-img
-  border: 0
-  max-width: 100%
-button
-  cursor: pointer
-input, button, select
-  font: inherit
-  cursor: pointer
-label
-  cursor: pointer
-ul, ol
-  list-style: none
-  margin: 0
-  padding: 0
-h1, h2, h3, h4, h5, h6, p
-  margin: 0
-  padding: 0
-
-.hidden
-  position: absolute
-  width: 1px
-  height: 1px
-  overflow: hidden
-  clip: rect(0,0,0,0)
-
-@import 'full_loader'
-@import 'byline'
-
-// 프로젝트별 스타일은 아래에 추가
-// @import 'intro'
+// 프로젝트별 스타일은 아래에 추가. 변수·믹스인이 필요한 파일은 그 파일 맨 위에 @use 'variables' as * / @use 'utils' as * 를 둔다
+// @use 'intro'

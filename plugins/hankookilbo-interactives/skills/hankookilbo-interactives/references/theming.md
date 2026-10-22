@@ -17,7 +17,9 @@
 
 ## `style.sass` (진입점)
 
-`@import 'variables'`, `'utils'` → reset → `html, body { overflow: hidden }` + `.body-wrapper`(실제 스크롤 컨테이너, `position: fixed`) → `@import 'full_loader'`, `'byline'` → 프로젝트 스타일 `@import`. `.hidden`(시각적 숨김) 유틸 포함. `.body-wrapper` 구조를 바꾸지 않는다.
+`@use 'base'` → `@use 'full_loader'` → `@use 'byline'` → 프로젝트 스타일 `@use`. 적은 순서대로 CSS가 나오므로 리셋(`_base.sass`)이 항상 먼저다. `_base.sass`에 reset, `html, body { overflow: hidden }`, `.body-wrapper`(실제 스크롤 컨테이너, `position: fixed`), `.hidden`(시각적 숨김) 유틸이 있다. `.body-wrapper` 구조를 바꾸지 않는다.
+
+Sass `@import`는 쓰지 않는다 — Dart Sass 1.80+가 폐기 경고를 찍고 3.0에서 사라진다. `@use`는 파일 맨 위에만 올 수 있다.
 
 ## `_variables.sass`
 
@@ -75,8 +77,8 @@ CDN의 CORS 허용 목록에 있어야 폰트가 뜬다. 기본 서체로만 보
 ## 스타일 규칙
 
 - `.sass`(들여쓰기)와 `.scss`(중괄호)를 혼용한다. 기존 파일 문법을 따르고, 새 파일은 `.scss`로 만든다.
-- 컴포넌트 스타일은 컴포넌트 파일에서 `import "../styles/xxx.scss"`로 가져오거나 `style.sass`에 `@import` 한다. 두 방식을 한 파일에 섞지 않는다.
-- 컴포넌트 `.scss`에서 변수, 믹스인을 쓸 때는 파일 상단에 `@import "variables"; @import "utils";`를 추가한다.
+- 컴포넌트 스타일은 컴포넌트 파일에서 `import "../styles/xxx.scss"`로 가져오거나 `style.sass`에 `@use` 한다. 두 방식을 한 파일에 섞지 않는다.
+- 변수, 믹스인을 쓰는 `.scss`/`.sass`는 파일 맨 위에 `@use "variables" as *; @use "utils" as *;`를 둔다. `@use`는 파일마다 따로 필요하다(`style.sass`가 불러도 다른 파일로 전파되지 않는다).
 - 폰트 크기는 `$font16` 같은 변수를 쓴다. `px` 직접 지정은 14px 이하의 캡션에만 허용한다.
 - 매직 넘버는 변수로 뺀다. 예: `$story-box-max-width: 640px`.
 - 테마는 `META.ts`의 `THEME` 하나로 정한다. Layout이 `<html data-theme>`와 `class="dark"`를 만든다. 둘 중 하나로 고정하고 전환 기능은 만들지 않는다 (`common-area.md`). 예외는 `patterns.md` 패턴 F 게임형의 PC(`syncOuterTheme`)뿐이다.

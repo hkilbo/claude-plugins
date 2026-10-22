@@ -160,6 +160,7 @@ Vue, Svelte 등 다른 프레임워크는 쓰지 않는다. 정적 HTML은 `.ast
 │   ├── styles/
 │   │   ├── style.sass              # 진입점 (reset + import)
 │   │   ├── _variables.sass         # 폰트 크기, 색, z-index, 브레이크포인트
+│   │   ├── _base.sass              # reset + .body-wrapper (style.sass 가 맨 먼저 @use)
 │   │   ├── _utils.sass             # mobile/tablet 믹스인
 │   │   ├── _full_loader.sass       # 초기 로딩 화면
 │   │   ├── _byline.scss

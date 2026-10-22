@@ -1,3 +1,6 @@
+@use "variables" as *;
+@use "utils" as *;
+
 @mixin byline-font {
   font-size: 14px;
   line-height: 1.5;

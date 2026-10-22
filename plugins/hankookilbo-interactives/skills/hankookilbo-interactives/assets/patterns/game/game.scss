@@ -1,6 +1,6 @@
 // 게임형(FLOW="game") 틀 — 페이지 스크롤 없이 화면 하나만 보인다
-@import "variables";
-@import "utils";
+@use "variables" as *;
+@use "utils" as *;
 
 :root[data-flow="game"] .shell {
   position: relative;

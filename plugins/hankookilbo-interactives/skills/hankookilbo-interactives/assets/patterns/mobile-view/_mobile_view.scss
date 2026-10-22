@@ -1,4 +1,4 @@
-// src/styles/_mobile_view.scss — 패턴 F 에서만 style.sass 에 @import
+// src/styles/_mobile_view.scss — 패턴 F 에서만 style.sass 에 @use 'mobile_view'
 :root[data-view="mobile"] {
   --gnb-h: 64px;
   --site-bg: #eee;                       // 바깥 판 (브라우저 라이트)

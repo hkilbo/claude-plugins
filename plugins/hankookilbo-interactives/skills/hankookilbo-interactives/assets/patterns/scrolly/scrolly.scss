@@ -1,6 +1,6 @@
 // src/styles/scrolly.scss
-@import "variables";
-@import "utils";
+@use "variables" as *;
+@use "utils" as *;
 
 .scrolly {
   position: relative;
