@@ -1,0 +1,93 @@
+@use "variables" as *;
+@use "utils" as *;
+
+@mixin byline-font {
+  font-size: 14px;
+  line-height: 1.5;
+  text-align: center;
+  letter-spacing: 0px;
+  color: $fontColBase;
+  font-family: $fontBase;
+}
+
+.byline {
+  position: relative;
+  background: none;
+  padding: 40px 20px;
+  min-height: 100lvh;
+  text-align: center;
+  z-index: 199;
+
+  .logo .title {
+    position: relative;
+    margin-bottom: 28px;
+    font-size: 14px;
+    line-height: 2;
+    font-weight: 700;
+    font-family: $fontBase;
+    color: $fontColBase;
+
+    span {
+      display: block;
+      font-size: 18px;
+      color: inherit;
+    }
+  }
+
+  .post-date {
+    margin-bottom: 28px;
+    @include byline-font;
+  }
+
+  dl {
+    margin: 0 0 14px;
+    dt {
+      display: block;
+      padding-right: 7px;
+      margin-bottom: 10px;
+      @include byline-font;
+      font-weight: 700;
+    }
+    dd {
+      display: inline-block;
+      margin: 0;
+      @include byline-font;
+    }
+  }
+
+  // 공유 4종 (ShareLinks.astro). 아이콘은 iconFont.css 의 icon-hk-sns-* 클래스
+  .share-tools {
+    margin: 42px 0 40px;
+    padding-left: 0;
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    list-style: none;
+
+    li {
+      margin: 0;
+    }
+    button {
+      display: block;
+      padding: 0;
+      font-size: 40px;
+      line-height: 1;
+      border: 0;
+      background: none;
+      color: $fontColBase;
+      cursor: pointer;
+    }
+    @include mobile {
+      margin: 30px 0;
+    }
+  }
+
+  .copy {
+    margin: 0;
+    padding-bottom: 120px;
+    @include byline-font;
+    @include mobile {
+      font-size: $font14;
+    }
+  }
+}

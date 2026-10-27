@@ -11,6 +11,10 @@ npm i zustand
 
 `package.json`에 `zustand`가 있으면 건너뛴다.
 
+> **게임 타이머 일시정지는 여기가 아니다.** 로고 버튼 메뉴·"화면이 너무 작아요" 동안 멈추는 것은 템플릿의
+> `hkCommon.createPause()`가 맡는다(본 스킬 `references/patterns.md` 패턴 E). React 게임이면 스토어 액션에서
+> `pause.paused`를 확인하거나 `createPause({ onChange: (p) => useGame.setState({ paused: p }) })`로 연결한다.
+
 ## 언제 쓰나
 
 | 상황 | 선택 |

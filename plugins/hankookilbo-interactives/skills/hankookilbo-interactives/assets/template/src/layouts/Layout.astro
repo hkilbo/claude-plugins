@@ -1,0 +1,175 @@
+---
+//@ts-nocheck
+import {
+  HTML_TITLE,
+  HTML_DESC,
+  THIS_URL,
+  PAGE_CODE,
+  ARTICLE_KEY,
+  FOLDER_NAME,
+  FLOW,
+  VIEW,
+  THEME,
+} from "../utils/constant/META";
+import Byline from "../components/Astro/byline.astro";
+
+import "../styles/style.sass";
+---
+
+<!DOCTYPE html>
+<!-- 공통영역(헤더·추천 카드) 상태는 <html data-*> 로 선언한다 (0-1장 "공통영역 API"). class="dark" 는 구 CDN 호환용으로 THEME 에서 자동 생성 -->
+<html
+  lang="ko"
+  class={THEME === "dark" ? "dark" : undefined}
+  data-flow={FLOW}
+  data-view={VIEW}
+  data-state="intro"
+  data-gnb="transparent"
+  data-theme={THEME}
+>
+  <head>
+    <title>{HTML_TITLE} | 한국일보</title>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="description" content={HTML_DESC} />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+
+    <!-- Open Graph -->
+    <meta property="og:site_name" content="한국일보" />
+    <meta property="og:locale" content="ko_KR" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={THIS_URL} />
+    <meta property="og:title" content={`[인터랙티브] ${HTML_TITLE}`} />
+    <meta property="og:description" content={HTML_DESC} />
+    <meta
+      property="og:image"
+      content={`https://interactive.hankookilbo.com/v/${FOLDER_NAME}/img/ogimage.png`}
+    />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <!-- 카카오톡 공유 카드 이미지 (800x800, 절대 경로). 인터랙티브 헤더의 카카오 공유가 이 메타를 읽는다 -->
+    <meta
+      name="kakao_og_image"
+      content={`https://interactive.hankookilbo.com/v/${FOLDER_NAME}/img/ogimage_kakao.png`}
+    />
+    <meta property="article:author" content="https://www.facebook.com/hkilbo" />
+    <meta property="article:publisher" content="https://www.facebook.com/hkilbo" />
+
+    <!-- Twitter -->
+    <meta name="twitter:site" content="@hankookilbo" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content={THIS_URL} />
+    <meta name="twitter:title" content={`[인터랙티브] ${HTML_TITLE}`} />
+    <meta name="twitter:description" content={HTML_DESC} />
+    <meta
+      name="twitter:image"
+      content={`https://interactive.hankookilbo.com/v/${FOLDER_NAME}/img/ogimage.png`}
+    />
+    <meta
+      name="twitter:image:src"
+      content={`https://interactive.hankookilbo.com/v/${FOLDER_NAME}/img/ogimage.png`}
+    />
+    <meta name="twitter:image:width" content="1200" />
+    <meta name="twitter:image:height" content="630" />
+    <meta name="twitter:creator" content="@hankookilbo" />
+
+    <link
+      rel="icon"
+      href="//image.hankookilbo.com/o/img/favicon.ico"
+      type="image/x-icon"
+    />
+
+    <!-- 한국일보 사내 통계 메타 -->
+    <meta name="hk:nw_newsid" content={ARTICLE_KEY} />
+    <meta name="hk:nw_press" content="한국일보" />
+    <meta name="hk:nw_presscode" content="hk" />
+    <meta name="hk:nw_title" content={`[인터랙티브] ${HTML_TITLE}`} />
+    <meta name="hk:nw_pagecode" content={PAGE_CODE} />
+
+    <!-- 웹폰트 (사내 CDN): Pretendard Variable + NanumMyeongjo. 폰트 파일을 저장소에 두지 않는다 (7장 참고) -->
+    <link rel="preconnect" href="https://assets.hankookilbo.com" crossorigin="anonymous" />
+    <link rel="stylesheet" href="https://assets.hankookilbo.com/fonts/hk_fonts.css" />
+
+    <!-- 한국일보 아이콘 폰트 (로고, SNS 아이콘) — public/addon/icon_font/ (스킬 assets 에서 복사). 같은 출처라 로컬에서도 CORS 없이 뜬다 -->
+    <link rel="stylesheet" href="./addon/icon_font/iconFont.css" />
+
+    <!-- 카카오 SDK v2 (공유). 인터랙티브 헤더(header.js)가 같은 주소의 v2를 쓰므로 반드시 이 주소·버전을 유지한다.
+         v1(developers.kakao.com/sdk/js/kakao.min.js)을 넣으면 헤더 카카오 공유가 깨진다 (0-1장 참고) -->
+    <script
+      is:inline
+      src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.6/kakao.min.js"
+      integrity="sha384-WAtVcQYcmTO/N+C1N+1m6Gp8qxh+3NlnP7X1U7qP6P5dQY/MsRBNTh+e1ahJrkEm"
+      crossorigin="anonymous"
+    ></script>
+    <script is:inline>
+      if (window.Kakao && !window.Kakao.isInitialized()) {
+        window.Kakao.init("e62df5186f0758def8f14c53e64d7b9d");
+      }
+    </script>
+
+    <!-- Google tag (gtag.js) — GA4 G-HR08PM6YWZ 하나로 통일. 개편 전 스트림(GTM·UA·다른 G-*)은 넣지 않는다 -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-HR08PM6YWZ"></script>
+    <script is:inline>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      gtag("js", new Date());
+      gtag("config", "G-HR08PM6YWZ");
+    </script>
+
+    <!-- 한국일보 인터랙티브 임베드 v2: 헤더 웹컴포넌트 + 추천 카드 (0-1장 참고). Nid는 대문자 N, 값은 META.ts의 ARTICLE_KEY -->
+    <script
+      is:inline
+      src={`https://assets.hankookilbo.com/components/interactive-embed/v2/interactive-embed.js?Nid=${ARTICLE_KEY}`}
+    ></script>
+
+    <!-- jQuery — 아래 통계 스크립트(hkAnalTag_hub.js)가 $ 를 쓴다. 반드시 통계 스크립트보다 앞 -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" is:inline></script>
+    <!-- 한국일보 통계 (Hmap 1.0) — www 절대 경로 -->
+    <script src="https://www.hankookilbo.com/Inc/Js/hkAnalTag_hub.js" is:inline></script>
+  </head>
+
+  <body class="loading">
+    <!-- 인터랙티브 헤더(<interactive-header>)는 head의 interactive-embed.js가 이 지점(body 맨 앞)에 자동으로 붙인다 -->
+    <!-- body-wrapper :: 모바일 카카오/사파리 등 인앱 브라우저 상·하단 NAV바 고정용 스크롤 컨테이너 -->
+    <div class="body-wrapper">
+      <div class="full-loader"></div>
+      <slot />
+      <Byline />
+    </div>
+
+    <script>
+      import { removeLoader } from "../lib/js/_comm/common.js";
+      import { wireScrollFlow } from "../lib/js/_comm/hkCommon.js";
+      import { FLOW } from "../utils/constant/META";
+
+      // 스크롤형: GNB 숨김/바탕과 크레딧 진입을 .body-wrapper 스크롤로 정한다 (8장 hkCommon).
+      // 게임형은 index.astro 의 화면 전환이 setCommon() 으로 정한다 (10장 패턴 E).
+      if (FLOW === "scroll") wireScrollFlow();
+
+      // iOS Safari 핀치줌 차단
+      document.addEventListener(
+        "touchmove",
+        (event) => {
+          if (event.touches.length > 1) event.preventDefault();
+        },
+        { passive: false }
+      );
+
+      // 로더 제거: 페이지 리소스(load)와 웹폰트(document.fonts.ready)가 모두 준비된 뒤.
+      // 웹폰트는 load 이벤트를 기다리지 않으므로 fonts.ready를 함께 기다려야
+      // 로더가 걷힌 직후 서체가 바뀌는 순간(FOUT)이 보이지 않는다.
+      // 무거운 에셋(3D, 영상)이 있으면 해당 컴포넌트에서 직접 removeLoader()를 호출한다.
+      const pageLoaded =
+        document.readyState === "complete"
+          ? Promise.resolve()
+          : new Promise((resolve) => window.addEventListener("load", resolve, { once: true }));
+      const fontsReady = document.fonts ? document.fonts.ready : Promise.resolve();
+      Promise.all([pageLoaded, fontsReady]).then(() => removeLoader());
+    </script>
+  </body>
+</html>

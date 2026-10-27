@@ -10,18 +10,17 @@ description: 한국일보 인터랙티브 기사 페이지(스크롤 여정형, 
 
 ## 핵심 원칙 (가장 중요)
 
-- **기술/구조에 관한 모든 것의 단일 진실 공급원은 `references/hk-interactive-template.md`
-  입니다.** 한국일보 개발부문이 만든 공식 문서이며, Astro+React 스택, 폴더 구조, `META.ts`,
-  인터랙티브 헤더(임베드 스크립트)/`Byline`, GA4/카카오 SDK/한국일보 통계 등 필수 스크립트, 배포 규칙이
-  전부 여기 정의돼 있습니다. **2단계(제작)를 시작하기 전에 이 문서 전체를 반드시
-  읽으세요.** 이 스킬의 다른 어떤 설명보다 이 문서가 우선합니다.
+- **기술/구조의 단일 진실 공급원은 `references/`(규칙)와 `assets/template/`(코드)입니다.**
+  한국일보 개발부문이 만든 공식 템플릿을 둘로 나눴습니다. 프로젝트에 그대로 들어갈 코드(`Layout.astro`, `META.ts`,
+  스타일, 공통 JS, 설정 파일)는 `assets/template/`에 실제 파일로 있으니 **읽지 말고 복사**하세요. 규칙과 설명은
+  `references/`에 작업 상황별로 나뉘어 있으니 **그 상황에 필요한 파일 하나만** 읽으세요(아래 "참고 파일").
+  이 스킬의 다른 어떤 설명보다 이 문서들이 우선합니다.
 - **기획 인터뷰(1단계)에서 만드는 브리프(`brief.md`)는 "최초 기획 메모"일 뿐, 이후
   절대 바꿀 수 없는 규칙 문서가 아닙니다.** 제작 도중 사용자가 다른 지시를 내리면
   항상 **최신 지시가 우선**합니다.
 - 반대로 아래는 몇 번을 뒤엎는 지시가 오더라도 항상 지켜야 하는 **고정 규칙**
-  입니다 (세부 내용은 `references/hk-interactive-template.md`, 특히 "0-1. 필수
-  요건"과 "12. 규칙과 함정" 참고):
-  1. `references/hk-interactive-template.md`의 "0-1. 필수 요건"에 있는 모든 항목
+  입니다 (세부 내용은 `references/template-overview.md` 「필수 요건」과 「규칙과 함정」):
+  1. `references/template-overview.md` 「필수 요건」에 있는 모든 항목
      (GA4 `G-HR08PM6YWZ` 하나/카카오SDK v2/한국일보 통계 `hkAnalTag_hub.js`, 인터랙티브 임베드, Byline, body-wrapper
      구조 등) — 절대 생략·삭제·ID변경 금지
   2. `npm run build` 산출물은 항상 `dist/` (astro.config.mjs의 `outDir` 변경 금지)
@@ -36,6 +35,23 @@ description: 한국일보 인터랙티브 기사 페이지(스크롤 여정형, 
 - 이 두 층(브리프=유동적, 고정 규칙=불변)을 헷갈리지 않는 것이 핵심입니다.
   판단 기준: **"이걸 지키지 않으면 배포가 불가능한가?"** 라면 고정 규칙,
   아니면 브리프입니다.
+- 디자인 방향은 `frontend-design` 스킬(이 플러그인과 함께 설치됨)로 정합니다(1단계 끝
+  「디자인 방향 정하기」). 지시가 부딪히면 **고정 규칙 > 브리프 > `frontend-design`** 순서로 따릅니다.
+  예: `frontend-design`이 다른 서체를 권해도 폰트는 CDN 2종만 씁니다.
+
+## 참고 파일 — 언제 무엇을 읽나
+
+| 상황 | 읽을 파일 | 복사할 코드 |
+|---|---|---|
+| 새 프로젝트 세팅, 규칙, 빌드·배포, QA 체크리스트 | `references/template-overview.md` | `assets/template/` 전체 + `assets/common/`, `assets/addon/` |
+| 헤더·추천 카드가 안 뜨거나 숨김/노출 시점을 바꿀 때 | `references/common-area.md` | (이미 `assets/template/src/lib/js/_comm/hkCommon.js`에 포함) |
+| 본문 구성 — 스크롤리텔링·롱폼·React 아일랜드·게임형·모바일뷰 | `references/patterns.md` | `assets/patterns/<패턴>/` 하나 |
+| 바이라인·공유 버튼 수정 | `references/byline-and-share.md` | — |
+| 색(라이트/다크)·폰트·변수·스타일 규칙 | `references/theming.md` | — |
+| 구 프로젝트(`hkUtilMoreInteractive`, 임베드 v1) 유지보수 | `references/legacy.md` | `assets/legacy/` |
+| 라이브러리 선택(캐러셀·스크롤·지도·상태 공유) | `hankookilbo-interactives-libs` 스킬 | — |
+
+한 파일이 300줄을 넘는 것은 `template-overview.md`뿐이며 맨 위에 목차가 있습니다.
 
 ---
 
@@ -45,44 +61,58 @@ description: 한국일보 인터랙티브 기사 페이지(스크롤 여정형, 
 
 1. 기획 배경, 기획 목적
 2. 대상 소재(사진·영상·데이터) 설명, 원하는 스토리
-3. 원하는 연출 방식 — 잘 모르면 추천. 아래 참고표 사용:
+3. **형식과 뷰** — 담당자 말로 묻습니다. 답은 `META.ts`의 `FLOW`·`VIEW`가 되고, 헤더·추천 카드(공통영역)가
+   언제 숨고 뜨는지를 정합니다 (`references/common-area.md`).
+   - 3-a. "이 페이지는 **스크롤해서 읽는** 페이지인가요, **게임처럼 버튼을 눌러 화면을 넘기는** 페이지인가요?"
+     → 스크롤 = `FLOW="scroll"` / 화면 넘김·퀴즈·선택지·미니게임 = `FLOW="game"`.
+     판단 기준: 본문이 세로로 이어지면 scroll, 한 화면씩 바뀌고 페이지 스크롤이 없으면 game.
+   - 3-b. "PC에서도 **휴대폰 화면 모양(세로 3:5)** 을 가운데 띄워 보여 줄까요, **창 전체**를 쓸까요?"
+     → 휴대폰 모양 = `VIEW="mobile"` / 창 전체 = `VIEW="normal"`(기본). 모바일뷰는 게임형에 주로 씁니다. 잘 모르면 normal.
+   - 3-c. **모바일뷰 + 게임형**(`VIEW="mobile"`, `FLOW="game"`)이면 12번(라이트/다크)을 묻기 전에 반드시 알리고 답을 받습니다:
+     "이 조합은 PC·태블릿에서 **라이트/다크를 따로 정할 수 없고, 보는 사람의 브라우저 설정을 따라갑니다.**
+     휴대폰에서는 고른 색이 적용됩니다. 그래도 괜찮을까요?"
+     이유: 패턴 F의 `syncOuterTheme()`이 폭 481 이상에서 `data-theme`을 브라우저 라이트/다크로 덮어씁니다(`references/patterns.md`).
+     괜찮다 → 12번으로. 안 된다 → 일반뷰(`VIEW="normal"`)나 스크롤형으로 바꿀지 다시 묻습니다. 답을 `brief.md`에 남깁니다.
+4. 원하는 연출 방식 — 잘 모르면 추천. 아래 참고표 사용:
 
-   | 담당자에게 보여줄 이름 | 언제 적합한지 | `hk-interactive-template.md` 10장의 어떤 패턴 기반인지 |
+   | 담당자에게 보여줄 이름 | 언제 적합한지 | `references/patterns.md`의 어떤 패턴 기반인지 |
    |---|---|---|
    | 스크롤로 계속 이어지는 여정형 | 등반/탐험/여정 서사 | 패턴 B (스크롤리텔링, 배경 고정 + IntersectionObserver) |
    | 예전/지금 비교 슬라이더 | 같은 장소·인물의 시간 변화 | 패턴 A(단순 롱폼) + React 아일랜드로 비교 슬라이더 컴포넌트 |
    | 시간순 타임라인 | 사건의 흐름을 순서대로 | 패턴 B 응용 (섹션을 시간순 배치) |
    | 지도 위 이동 경로형 | 이동 경로가 이야기의 핵심 | 패턴 C (React 아일랜드, `client:only="react"`) + 지도 라이브러리 자유 선택 |
    | 풀스크린 몰입 갤러리 | 사진 자체의 임팩트가 중요 | 패턴 A 또는 C |
+   | 화면 넘김 게임형 (퀴즈·선택지·미니게임) | 독자가 조작하며 진행, 페이지 스크롤 없음 | 패턴 E (`FLOW="game"`) |
+   | 휴대폰 화면을 PC 가운데 띄우는 모바일뷰 | 모바일 UI 그대로 PC에서도 보여줄 때 | 패턴 F (`VIEW="mobile"`, E·B와 조합) |
 
    외부 라이브러리(GSAP, three.js, 지도 라이브러리 등)는 화이트리스트 없이
    자유롭게 선택 가능합니다. 다만 활발히 유지보수되는 라이브러리를 우선하고
    번들 크기에 신경 쓰세요.
-4. 제목(`HTML_TITLE`), 요약 설명(`HTML_DESC`, 80자 이내 권장)
-5. 폴더명(`FOLDER_NAME`, 영문 소문자+하이픈/언더스코어)
-6. 연결 기사 키(`ARTICLE_KEY`, "A"+19자리) — **한국일보 기획팀이 발행**하는 값입니다.
+5. 제목(`HTML_TITLE`), 요약 설명(`HTML_DESC`, 80자 이내 권장)
+6. 폴더명(`FOLDER_NAME`, 영문 소문자+하이픈/언더스코어)
+7. 연결 기사 키(`ARTICLE_KEY`, "A"+19자리) — **한국일보 기획팀이 발행**하는 값입니다.
    담당자가 직접 만들 수 없으니, 한국일보 담당자를 통해 발급받아 달라고 안내하세요.
    아직 못 받았다면 임시값으로 두고 넘어가되, `COMPLETION.md`에 "기사키 미발급
    — 배포 전 한국일보 확인 필요"라고 반드시 남기세요.
    이 값은 통계 메타뿐 아니라 **인터랙티브 임베드 스크립트의 `Nid=`**(헤더 +
-   하단 추천 카드, 템플릿 0-1장)에도 들어갑니다. `Nid`는 대문자 N이고 값은
+   하단 추천 카드, `references/common-area.md`)에도 들어갑니다. `Nid`는 대문자 N이고 값은
    `META.ts`의 `ARTICLE_KEY`를 그대로 씁니다 — 다른 곳에 하드코딩하지 마세요.
    임시값인 채 배포하면 추천 카드에 자기 기사가 뜨거나 카드가 안 뜹니다.
-7. 게시 예정일(`POST_DATE`)
-8. 제작진(`BYLINE_MEMBERS`) — 부서별로: 취재/사진/영상/인터랙티브 기획제작 등
-9. 소재 파일(사진·영상·데이터) 첨부 + 각 소재의 출처(크레딧)와 사용 권한 확인
-10. **공유 이미지 2장** — 페이스북·X용 `ogimage.png` **1200×630**, 카카오톡용 `ogimage_kakao.png`
+8. 게시 예정일(`POST_DATE`)
+9. 제작진(`BYLINE_MEMBERS`) — 부서별로: 취재/사진/영상/인터랙티브 기획제작 등
+10. 소재 파일(사진·영상·데이터) 첨부 + 각 소재의 출처(크레딧)와 사용 권한 확인
+11. **공유 이미지 2장** — 페이스북·X용 `ogimage.png` **1200×630**, 카카오톡용 `ogimage_kakao.png`
     **800×800** (둘 다 PNG). 담당자에게 "링크를 공유했을 때 카드에 뜰 이미지 두 장"이라고 설명하고
     받으세요. 없으면 대표 사진으로 두 크기를 만들어 보여 주고 승인받습니다. **이 두 장 없이는
     3단계 `self_check.js`를 통과하지 못합니다** — 템플릿 자리 이미지인 채로 넘어가지 마세요.
-11. 디자인 컨셉, 톤&무드 — **페이지 색상을 라이트와 다크 중 무엇으로 할지** 꼭 확인하세요.
+12. 디자인 컨셉, 톤&무드 — **페이지 색상을 라이트와 다크 중 무엇으로 할지** 꼭 확인하세요.
     담당자에게는 "페이지 색상을 라이트(흰 바탕)와 다크(검은 바탕) 중 어떤 걸로 할까요?"라고
     물으면 됩니다. 둘 중 하나로 고정하고, 페이지 안에서 바꾸는 전환 기능은 만들지 않습니다.
-    이 답으로 `<html>`의 `dark` 클래스와 `_variables.sass`의 `$bgBase`가 정해집니다 (템플릿 0-1장 "테마").
-    - 다크: `<html lang="ko" class="dark">`, `$bgBase`는 어두운 색 (템플릿 기본값)
-    - 라이트: `<html lang="ko">` (클래스 없음), `$bgBase`는 밝은 색
-12. 레퍼런스 사이트
-13. 하지 말아야 할 것 (제약사항)
+    이 답은 `META.ts`의 `THEME`("dark" | "light")에 씁니다. Layout이 `<html data-theme>`와 `class="dark"`를
+    여기서 자동으로 만들고, `_variables.sass`의 `$bgBase`도 같은 쪽으로 맞춥니다 (`references/theming.md`).
+    `self_check.js`가 셋의 일치를 검사합니다. 예외는 모바일뷰·게임형의 PC뿐입니다(패턴 F) — 3-c에서 이미 안내하고 동의받은 조합입니다.
+13. 레퍼런스 사이트
+14. 하지 말아야 할 것 (제약사항)
 
 **콘텐츠 브리프 형식**: 사진·문구·배치를 담당자가 아래 형식으로 전달하면
 왔다갔다하는 질문 없이 바로 `data.ts`에 옮길 수 있습니다. 담당자에게 이 형식을
@@ -115,7 +145,7 @@ cp -r assets/common/. <프로젝트폴더>/public/img/common/
 
 **공통 자산(아이콘 폰트)**: `assets/addon/icon_font/`에 한국일보 아이콘 폰트(`iconFont.css` +
 `fonts/hk.*`)가 들어있습니다. 바이라인 공유 4종 아이콘이 이 폰트입니다. 폴더째 복사하고,
-`Layout.astro`에서는 `./addon/icon_font/iconFont.css` 상대 경로로 링크합니다 (템플릿 5장):
+`Layout.astro`에서는 `./addon/icon_font/iconFont.css` 상대 경로로 링크합니다 (`assets/template/src/layouts/Layout.astro`에 포함):
 
 ```bash
 cp -r assets/addon <프로젝트폴더>/public/
@@ -126,26 +156,46 @@ CDN 주소(`interactive.hankookilbo.com/addon/icon_font/…`)로 링크하면 �
 
 **폰트는 복사하지 않습니다.** 한국일보 CDN의
 `https://assets.hankookilbo.com/fonts/hk_fonts.css`를 `Layout.astro` `<head>`에서
-링크하는 방식이고, 템플릿 5장 Layout 원문에 이미 들어있습니다. 제공 서체는
+링크하는 방식이고, `assets/template/src/layouts/Layout.astro`에 이미 들어있습니다. 제공 서체는
 `'Pretendard Variable'`(가변, 45~920)과 `'NanumMyeongjo'`(400/700/800) 두 가지이며
-스타일에서는 `$fontBase` / `$fontSerif` 변수로 씁니다 (템플릿 7장). `public/fonts/`
+스타일에서는 `$fontBase` / `$fontSerif` 변수로 씁니다 (`references/theming.md`). `public/fonts/`
 폴더, 폰트 파일, `@font-face` 선언을 만들지 마세요(아이콘 폰트 `public/addon/icon_font/`만 예외) — `scripts/self_check.js`가
 발견하면 실패 처리합니다. 다른 서체가 필요하면 한국일보 프론트개발팀에
 `hk_fonts.css` 추가를 요청하세요.
 
 답변을 모으면 프로젝트 루트에 `brief.md`를 작성하세요. **주의**: `brief.md`는
-`META.ts`를 대체하지 않습니다 — 제목/URL/바이라인 같은 사이트 메타 정보는
+`META.ts`를 대체하지 않습니다 — 제목/URL/바이라인/형식(`FLOW`·`VIEW`·`THEME`) 같은 사이트 메타 정보는
 `META.ts` 한 곳에만 씁니다. `brief.md`에는 그 문서에 없는 것(기획 배경, 연출 방식,
-소재 출처)만 담습니다.
+소재 출처, 디자인 방향)만 담습니다.
+
+**디자인 방향 정하기**: `brief.md`를 쓴 뒤 `frontend-design` 스킬을 불러 기사 주제와 12번 톤&무드에서
+방향을 정합니다. 이때 제약으로 폰트 2종(`$fontBase`·`$fontSerif`), `THEME`, 고른 연출 패턴을 함께 넘깁니다.
+결과는 `brief.md`의 「디자인 방향」에 아래 네 가지로 적고, 담당자에게 보여 승인받은 뒤 2단계로 넘어갑니다.
+
+- 색 4~6개(hex) — 배경은 `THEME`과 같은 밝기
+- 글자 위계 — 제목·본문·캡션에 쓸 서체(고딕/명조)와 `$font` 변수
+- 모션 강도 — 차분함 / 보통 / 활발함 중 하나와 쓸 곳
+- 피할 것 — 이 기사에 어울리지 않는 연출
+
+엄숙한 기사에서 신문식 단 구성·헤어라인을 쓰려면 「디자인 방향」에 그렇게 적으세요.
+`frontend-design`은 이를 흔한 AI 연출로 보고 피하지만, 브리프에 적힌 지시는 따릅니다.
 
 ## 2단계 — 제작
 
-**시작하기 전에 `references/hk-interactive-template.md` 전체를 읽으세요.**
-이 문서의 0장~13장이 프로젝트 생성 방법 그 자체입니다. 문서의 "0. AI에게
-이렇게 요청하세요"에 나온 형식대로, 1단계에서 모은 값(FOLDER_NAME, HTML_TITLE,
-HTML_DESC, ARTICLE_KEY, POST_DATE, 바이라인)을 채워 프로젝트를 생성하고, 3번의
-페이지 패턴(스크롤리텔링/단순 롱폼/데이터 시각화) 중 1단계에서 고른 연출
-방식에 맞는 걸 고르세요.
+**시작하기 전에 `references/template-overview.md`를 읽으세요.** 「프로젝트 생성 절차」대로 `assets/template/`를
+통째로 복사하고, `assets/common/`·`assets/addon/`을 `public/`에 넣은 뒤, 1단계에서 모은 값(FOLDER_NAME, HTML_TITLE,
+HTML_DESC, ARTICLE_KEY, POST_DATE, 바이라인, FLOW·VIEW·THEME)을 `META.ts`에 채웁니다. 본문은 `references/patterns.md`에서
+1단계의 연출 방식에 맞는 패턴 하나를 골라 `assets/patterns/<패턴>/`을 복사해 시작합니다.
+
+**공통영역(헤더·추천 카드) 배선**: 형식에 따라 할 일이 다릅니다 (`references/common-area.md`).
+
+| `FLOW` | 할 일 |
+|---|---|
+| `scroll` | 없음. `Layout.astro`가 `wireScrollFlow()`를 켭니다. 내리면 GNB 숨김, 올리면 바탕, 바이라인이 화면 60%에 닿으면 추천 카드 |
+| `game` | 화면 전환 함수에서 `setCommon(COMMON[screen])` 한 줄 (패턴 E). 시작 `intro·transparent` → 진행 `play·menu` → 끝 `credits·transparent`. 시계가 있으면 `onMenu()`로 멈춤 |
+
+`VIEW="mobile"`이면 `references/patterns.md` 패턴 F의 `_mobile_view.scss`와 `<script>`를 추가합니다. GNB·추천 카드를 CSS나 스크롤 코드로 직접
+건드리지 마세요 — `<html data-*>`만이 통로입니다.
 
 **라이브러리 선택**: 캐러셀/슬라이더, 스크롤 인터랙션, 지도, 지도 위 데이터
 시각화, React 아일랜드 간 상태 공유(퀴즈·계산기)가 필요하면
@@ -207,7 +257,7 @@ CloudFront CORS 허용 목록(`localhost:3000`, `interactive.hankookilbo.com`) �
 > **주의**: 이 템플릿은 `window`가 아니라 `.body-wrapper`가 실제 스크롤
 > 컨테이너입니다. 콘텐츠 안에서 스크롤 관련 코드를 직접 짤 때
 > `window.scrollY`, `window.addEventListener("scroll")`을 쓰면 동작하지
-> 않습니다. `references/hk-interactive-template.md` 12장 "규칙과 함정"을
+> 않습니다. `references/template-overview.md` 「규칙과 함정」을
 > 참고하세요.
 
 ### 담당자에게 스크린샷 확인 요청 (3단계의 마지막, 반드시 멈춘다)
@@ -244,9 +294,12 @@ Byline(콘텐츠 크레딧)은 2단계에서 이미 `Layout.astro`에 포함되�
   뜨는지. `self_check.js`가 `share-tools` 존재와 카카오 v1 API(`Kakao.Link`) 미사용을 검사
 - 로딩 화면(스피너)이 떠 있는 동안 헤더가 보이지 않는지. `_full_loader.sass`의
   `body.loading interactive-header` / `opacity: 0 !important` 규칙이 담당하며 `self_check.js`가
-  있는지 확인합니다. 헤더를 건드리는 CSS는 이 한 줄이 유일한 예외입니다 (템플릿 0-1장 "헤더").
-- `<html>`의 `dark` 클래스가 페이지 배경과 맞는지 (어두운 배경 = `class="dark"`). 어긋나면
-  헤더 로고가 배경과 같은 색이 돼 안 보입니다. `self_check.js`가 `$bgBase` 밝기와 비교해 경고합니다.
+  있는지 확인합니다. 헤더를 건드리는 CSS는 이 한 줄이 유일한 예외입니다 (`references/common-area.md`).
+- `<html>`에 `data-flow` `data-view` `data-state="intro"` `data-gnb="transparent"` `data-theme` 5개가 선언됐는지
+  (`self_check.js`가 검사). `META.ts`의 `THEME`·`class="dark"`·`$bgBase`가 한쪽으로 맞는지 — 어긋나면 헤더 로고가 배경과
+  같은 색이 돼 안 보입니다.
+- 스크롤형이면 `Layout.astro`에 `wireScrollFlow()` 호출이 있는지, 게임형이면 끝 화면 전환에 `setCommon({ state: "credits", … })`가
+  있는지 (`self_check.js`가 검사). 없으면 추천 카드가 영영 안 뜹니다.
 - 공유 카드용 메타 4개(`og:title`, `og:description`, `og:image`, `kakao_og_image`)가
   실제 값이고, `public/img/ogimage.png`(1200×630)·`public/img/ogimage_kakao.png`(800×800)가
   이 프로젝트 이미지로 올라가 있는지 (`self_check.js`가 존재·크기를 검사)
@@ -256,8 +309,9 @@ Byline(콘텐츠 크레딧)은 2단계에서 이미 `Layout.astro`에 포함되�
 3단계와 동일하게 `self_check.js` + `qa_playwright.js`를 다시 실행하세요. 스크린샷은 같은
 `qa-report/`에 덮어씁니다. 담당자가 확인한 뒤 화면이 바뀐 곳이 있으면 해당 파일을 알리고
 다시 확인받으세요 (바뀐 곳이 없으면 재요청하지 않습니다).
-추가로 `hk-interactive-template.md` "14. 배포 전 QA 체크리스트"를 하나씩
-확인하세요 (인터랙티브 헤더 표시, 헤더 공유 버튼, 모바일 인앱 브라우저 스크롤 등).
+추가로 `references/template-overview.md` 「배포 전 QA 체크리스트」를 하나씩
+확인하세요 (인터랙티브 헤더 표시, 헤더 공유 버튼, 모바일 인앱 브라우저 스크롤, 스크롤형 끝에서 `data-state="credits"`
++ 추천 카드, 게임형 진행 화면의 로고 버튼 등).
 
 ## 6단계 — 완료 문서화
 
@@ -286,6 +340,6 @@ zip -r <FOLDER_NAME>-final.zip <프로젝트폴더>
 ```
 
 사용자에게 안내: "이 zip을 한국일보 담당자에게 전달하면 됩니다. 한국일보 배포팀은
-`hk-interactive-template.md` 13장 절차대로 `dist/`를 FTP로
+`references/template-overview.md` 「개발, 빌드, 배포」 절차대로 `dist/`를 FTP로
 `interactive.hankookilbo.com/v/{FOLDER_NAME}/`에 업로드하고, 기사 CMS에 URL을
 연결하고, 페이스북/카카오 OG 캐시를 갱신할 거예요."

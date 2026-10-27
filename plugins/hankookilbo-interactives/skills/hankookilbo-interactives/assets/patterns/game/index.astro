@@ -1,0 +1,59 @@
+---
+// src/pages/index.astro — 게임형(FLOW="game"). 화면 섹션을 전부 두고 하나만 보인다
+import Layout from "../layouts/Layout.astro";
+import "../styles/game.scss";
+---
+
+<Layout>
+  <main class="shell">
+    <section class="screen is-on" data-screen="title">
+      …시작 화면…
+      <button type="button" data-go="play">시작하기</button>
+    </section>
+    <section class="screen" data-screen="play">
+      …문항/진행 화면…
+      <button type="button" data-go="credits">끝내기</button>
+    </section>
+    <section class="screen" data-screen="credits">
+      <!-- 로고 위 '이전 화면 가기 · 처음으로 가기' 는 프로젝트가 만든다. 바이라인은 아래 credits-slot 으로 옮겨 온다 -->
+      <div class="credits-actions">
+        <button type="button" data-go="play">이전 화면 가기</button>
+        <button type="button" data-go="title">처음으로 가기</button>
+      </div>
+      <div class="credits-slot"></div>
+    </section>
+  </main>
+</Layout>
+
+<script>
+  import { setCommon, placeByline } from "../lib/js/_comm/hkCommon.js";
+
+  // 규칙: 화면이 바뀌는 지점마다 setCommon(COMMON[화면]) 을 부른다. COMMON 표는 여기 한 곳에만 둔다.
+  // 화면이 늘면 행을 추가한다. 엔딩이 한 화면이고 아직 크레딧이 아니면 play 행을 그대로 쓴다
+  const COMMON = {
+    title: { state: "intro", gnb: "transparent" }, //  투명 GNB
+    play: { state: "play", gnb: "menu" }, //           GNB 숨김 + 왼쪽 위 로고 버튼. 누르면 GNB 가 내려온다
+    credits: { state: "credits", gnb: "transparent" }, // 투명 GNB + 추천 카드
+  };
+
+  // 게임형은 크레딧이 한 화면이다 — Layout 이 본문 뒤에 렌더한 바이라인을 크레딧 화면 안으로
+  placeByline(document.querySelector(".credits-slot"));
+
+  // 화면 전환과 공통영역을 한 함수로 묶어 둔 예시. 게임 엔진·React 상태로 화면을 바꾸면 그쪽 전환 지점에서 setCommon 만 부르면 된다
+  function go(name) {
+    setCommon(COMMON[name] ?? COMMON.play);
+    document.querySelectorAll(".screen").forEach((el) => el.classList.toggle("is-on", el.dataset.screen === name));
+  }
+  document.addEventListener("click", (e) => {
+    const target = e.target.closest("[data-go]");
+    if (target) go(target.dataset.go);
+  });
+  go("title");
+
+  // ── 타이머·애니메이션 루프가 있는 게임만 (없으면 이 블록을 지운다) ──────────────────────
+  // createPause 가 '로고 버튼으로 GNB 를 연 동안'·'모바일뷰 화면이 너무 작은 동안' 을 알아서 멈춤 이유로 건다
+  // import { createPause } from "../lib/js/_comm/hkCommon.js";
+  // const pause = createPause();
+  // setInterval(() => { if (pause.paused) return; /* 시간 줄이기 */ }, 100);
+  // pause.hold("feedback", true);  // 게임 자체 사정도 같은 방식으로
+</script>

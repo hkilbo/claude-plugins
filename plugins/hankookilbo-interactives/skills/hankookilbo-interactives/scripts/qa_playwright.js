@@ -185,8 +185,8 @@ async function main() {
             nid,
             headerMounted: Boolean(header && header.shadowRoot),
             headerIsFirstInBody: Boolean(header && document.body.firstElementChild === header),
-            headerScrollContainer: header ? header.getAttribute("scroll-container") : null,
-            scriptScrollContainer: embedScript ? embedScript.getAttribute("data-scroll-container") : null,
+            // 공통영역 API (references/common-area.md) — <html data-*> 초기값
+            html: ["flow", "view", "state", "gnb", "theme"].reduce((o, k) => ((o[k] = document.documentElement.dataset[k] ?? null), o), {}),
             recommendMounted: Boolean(document.querySelector("interactive-recommend")),
           };
         })
@@ -277,6 +277,21 @@ async function main() {
       });
     }).catch(() => {});
 
+    // 스크롤형: 끝에 닿았으니 wireScrollFlow 가 credits 로 바꿨어야 하고 추천 카드가 떠 있어야 한다 (첫 뷰포트에서 한 번만)
+    if (report.embed && !report.embed.error && report.embed.creditsReached === undefined) {
+      await page.waitForTimeout(1500);
+      Object.assign(
+        report.embed,
+        await page
+          .evaluate(() => ({
+            creditsReached: document.documentElement.dataset.state === "credits",
+            endGnb: document.documentElement.dataset.gnb ?? null,
+            recommendVisible: Boolean(document.querySelector("interactive-recommend")?.shadowRoot?.querySelector("aside")),
+          }))
+          .catch(() => ({})),
+      );
+    }
+
     // .body-wrapper 구조라 fullPage도 현재 화면(= 페이지 끝, 바이라인) 한 장이 된다
     const screenshotPath = path.join(out, `${vp.name}-end.png`);
     await page.screenshot({ path: screenshotPath, fullPage: true }).catch(() => {});
@@ -341,20 +356,22 @@ async function main() {
               : "마운트 안 됨"
         }`
       );
-      if (e.headerMounted) {
-        const scOk = e.headerScrollContainer === ".body-wrapper";
-        const attrOnScript = e.scriptScrollContainer === ".body-wrapper";
-        console.log(
-          `  ${scOk ? "✓" : attrOnScript ? "!" : "✕"} 헤더 스크롤 기준: ${
-            scOk
-              ? ".body-wrapper"
-              : attrOnScript
-                ? "스크립트 태그의 data-scroll-container는 맞음. CDN 스크립트가 아직 이 속성을 지원하지 않는 버전 — 코드 문제 아님, 프론트개발팀 운영 반영 대기 (그동안 헤더 자동 숨김·하단 추천 카드 미동작)"
-                : `${e.headerScrollContainer || "없음"} — 임베드 스크립트에 data-scroll-container=".body-wrapper" 붙이기`
-          }`
-        );
+      const h = e.html || {};
+      const declared = ["flow", "view", "state", "gnb", "theme"].filter((k) => h[k]);
+      console.log(
+        `  ${declared.length === 5 ? "✓" : "✕"} 공통영역 API <html data-*>: ${
+          declared.length === 5
+            ? Object.entries(h).map(([k, v]) => `${k}=${v}`).join(" ")
+            : `누락 ${["flow", "view", "state", "gnb", "theme"].filter((k) => !h[k]).join(", ")} — Layout.astro <html> 에 선언 (assets/template/src/layouts/Layout.astro)`
+        }`
+      );
+      console.log(`  ${e.recommendMounted ? "✓" : "-"} 추천 카드 <interactive-recommend>: ${e.recommendMounted ? "마운트됨 (data-state=\"credits\" 에서 표시)" : "없음 (Nid 없음 또는 data-recommend=\"false\")"}`);
+      if (h.flow === "scroll" && e.creditsReached !== undefined) {
+        console.log(`  ${e.creditsReached ? "✓" : "✕"} 스크롤형 끝: data-state=${e.creditsReached ? "credits" : `${document_state(e)} — wireScrollFlow() 가 Layout 에서 호출되는지, 바이라인(.byline)이 있는지 확인`} / gnb=${e.endGnb}`);
+        console.log(`  ${e.recommendVisible ? "✓" : "✕"} 스크롤형 끝: 추천 카드 ${e.recommendVisible ? "표시됨" : "안 보임 (후보 없음·API 실패·credits 미진입)"}`);
+      } else if (h.flow === "game") {
+        console.log("  - 게임형: 진행 화면 로고 버튼·끝 화면 추천 카드는 자동 확인 불가 — 담당자 확인 항목 (references/template-overview.md QA 체크리스트)");
       }
-      console.log(`  ${e.recommendMounted ? "✓" : "-"} 추천 카드 <interactive-recommend>: ${e.recommendMounted ? "마운트됨 (스크롤 후 하단에 표시)" : "없음 (Nid 없음 또는 data-recommend=\"false\")"}`);
     }
   }
   if (report.consoleErrors.length) {
@@ -365,6 +382,10 @@ async function main() {
     console.log("\n실패한 네트워크 요청:");
     report.failedRequests.forEach((r) => console.log(`  - [${r.viewport}] ${r.url} (${r.failure || ""})`));
   }
+}
+
+function document_state(e) {
+  return e.creditsReached ? "credits" : "credits 아님";
 }
 
 main();

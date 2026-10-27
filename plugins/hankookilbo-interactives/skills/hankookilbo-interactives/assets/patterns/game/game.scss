@@ -1,0 +1,28 @@
+// 게임형(FLOW="game") 틀 — 페이지 스크롤 없이 화면 하나만 보인다
+@use "variables" as *;
+@use "utils" as *;
+
+:root[data-flow="game"] .shell {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  background: $bgBase;
+}
+.screen {
+  position: absolute;
+  inset: 0;
+  display: none;
+  flex-direction: column;
+  padding: 72px 24px 32px; // 휴대폰 폭: GNB(64)가 화면 위에 얹힌다
+  overflow-y: auto;
+  &.is-on { display: flex; }
+}
+// 모바일뷰 481 이상(헤더의 interactive-tab): GNB 가 떠 있는 화면 바깥이라 위 여백이 작다
+@media (min-width: 481px) {
+  :root[data-view="mobile"] .screen { padding-top: 28px; }
+}
+.credits-actions { display: flex; justify-content: center; gap: 8px; }
+// 크레딧 화면 안으로 옮겨 온 바이라인은 한 화면 높이를 강제하지 않는다
+.credits-slot .byline { min-height: auto; padding-top: 24px; }
