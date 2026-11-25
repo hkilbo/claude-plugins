@@ -30,7 +30,8 @@
 - 루트 요소를 `height: var(--screen-h); overflow: hidden`으로 고정하고 화면들을 그 안에 겹쳐 둔다. 화면을 어떻게 바꾸는지(직접 만든 함수, 게임 엔진의 씬 전환)는 자유다.
 - 끝 화면으로 갈 때 `hkCommon.showCredits(target)`(`target` = 바이라인을 넣을 요소), 크레딧에서 다른 화면으로 돌아갈 때 `hkCommon.hideCredits()`. `<html>`의 `data-credits`는 `"end"`. `"bottom"`이면 바이라인이 본문 뒤에 붙어 스크롤이 생기고 그 스크롤에 GNB가 숨는다. `end`인데 `showCredits(target)` 호출이 없으면 `self_check.js`가 실패 처리한다.
 - **크레딧 화면 = 바이라인 + 추천 카드.** `data-credits="end"`면 공통 블록이 바이라인을 숨김 자리(`.byline-holder`)에 두고, `showCredits(target)`가 `target` 안으로 옮겨 온다. 크레딧 화면이 길어 안에서 스크롤돼도 된다.
-- "이전 화면·처음으로" 같은 버튼은 프로젝트가 만든다. 엔딩이 한 화면이고 아직 크레딧이 아니면 `showCredits(target)`를 부르지 않는다. 추천 카드는 크레딧에서만 뜬다.
+- "만든 사람들"처럼 크레딧으로 넘어가는 버튼은 만들지 않는다. 제작진은 바이라인에 나온다. 마지막 화면에 도착할 때 `showCredits(target)`를 부르면 바이라인이 그 화면의 내용 아래에 붙는다. 추천 카드는 크레딧에서만 뜬다.
+- "처음으로" 같은 버튼이 필요하면 프로젝트가 만든다.
 - **타이머는 선택이다.** 시간 제한·애니메이션 루프가 있을 때만 `hkCommon.createPause()`를 쓴다. 자동으로 걸리는 이유는 없다. 게임이 `pause.hold("feedback", true)`처럼 이유를 걸고 `false`로 푼다. `createPause({ onChange })`로 멈춤/재개 순간을 받을 수 있다(영상·오디오 일시정지). `window.gameClock` 같은 전역은 만들지 않는다.
 
 `hkCommon`의 함수 전체는 `common-area.md` 「`hkCommon` — 프로젝트가 쓰는 쪽」.
