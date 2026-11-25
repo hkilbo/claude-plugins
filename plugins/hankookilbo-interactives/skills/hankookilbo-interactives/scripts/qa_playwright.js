@@ -1,39 +1,32 @@
 #!/usr/bin/env node
 /**
- * qa_playwright.js — 데스크톱/모바일 뷰포트 스크린샷 + 콘솔 에러 체크
+ * qa_playwright.js — 실제 브라우저(Chromium)로 열어 공통영역 동작을 검사하고 화면을 찍는다
  *
+ * 준비 (기기당 한 번 — 프로젝트 폴더에 node_modules 를 만들지 않는다):
+ *   npm install --prefix ~/.hk-interactives playwright
+ *   npx --prefix ~/.hk-interactives playwright install chromium
  * 사용법:
- *   npm install playwright --no-save   (최초 1회)
- *   npx playwright install chromium    (최초 1회)
- *   node qa_playwright.js --entry ./dist/index.html --out ./qa-report [--port 3000]
+ *   node qa_playwright.js --entry ./index.html --out ./qa-report [--port 3000]
  *                         [--sections ".step, .era-card"] [--anchor-mobile 0.5] [--anchor-desktop 0.5]
  *
- * --sections: 챕터(섹션) 요소 선택자. 주면 모바일·PC에서 챕터마다 한 장씩 화면을 찍는다
- *             (mobile-01.png, desktop-01.png …). 담당자 확인용 스크린샷은 이걸로 만든다.
- *             .body-wrapper가 스크롤 컨테이너라 fullPage 캡처는 마지막 화면 한 장뿐이기 때문이다.
- * --anchor-mobile / --anchor-desktop:
- *             챕터 요소의 위쪽 끝을 화면 높이의 어느 지점(0~1)에 두고 찍을지. 없으면 요소 가운데를
- *             화면 가운데에 맞춘다. 모바일에서 고정 그림이 화면 위쪽을 차지해 글이 가려지면
- *             --anchor-mobile을 그림 아래 지점(예: 0.5)으로 준다. --anchor는 둘 다에 적용.
+ * 프로젝트 폴더를 http://localhost:3000 으로 잠깐 띄운다(내장 정적 서버). 3000 에 이미 **같은 페이지**가 떠 있으면
+ * (담당자가 보려고 띄워 둔 서버) 그 서버를 그대로 쓴다. 다른 페이지가 떠 있으면 멈춘다.
+ * 검사: 헤더 마운트, <html data-*> 초기값·테마, 첫 요소가 GNB 아래에서 시작하는지, GNB 스크롤 규칙, 크레딧·추천 카드,
+ * 웹폰트, 콘솔 에러. 결과는 qa-report/report.json + 스크린샷. 스크린샷은 Claude 가 레이아웃 문제를 찾는 용도다.
  *
- * dist/를 http://localhost:3000 으로 잠깐 띄운 뒤(내장 정적 서버, 외부 의존성 없음)
- * 실제 브라우저(Chromium)로 열어 여러 화면 크기에서 스크린샷을 찍고, 콘솔 에러/
- * 실패한 네트워크 요청/웹폰트 로드 여부를 qa-report/report.json + 스크린샷으로
- * 저장합니다. 클로드는 이 스크린샷을 직접 보고 레이아웃 문제를 스스로 판단해서
- * 고치세요 (이 스크립트는 "찍어서 보여주기"만 하고, 시각적 판단은 하지 않습니다).
+ * --sections: 챕터(섹션) 요소 선택자. 주면 모바일·PC에서 챕터마다 한 장씩 찍는다 (mobile-01.png, desktop-01.png …).
+ *             .body-wrapper 가 스크롤 컨테이너라 fullPage 캡처는 마지막 화면 한 장뿐이기 때문이다.
+ * --anchor-mobile / --anchor-desktop: 챕터 요소의 위쪽 끝을 화면 높이의 어느 지점(0~1)에 두고 찍을지. 없으면 가운데.
  *
- * file:// 로 열지 않는 이유: 웹폰트 CDN(assets.hankookilbo.com)이 CORS로 origin을
- * 확인하는데, file:// 의 origin은 "null"이라 폰트가 절대 안 뜹니다. localhost:3000은
- * Astro 개발 서버(astro.config.mjs server.port)와 같은 origin이라 CDN·추천 카드 API
- * 허용 목록에 등록돼 있습니다. 개발 서버가 떠 있으면 포트가 겹치니 먼저 끄세요.
- *
+ * file:// 로 열지 않는 이유: 웹폰트·헤더 CDN(assets.hankookilbo.com)과 추천 카드 API 가 origin 을 확인한다.
+ * 허용 목록에 있는 로컬 origin 은 localhost:3000 뿐이다.
  */
 
 const path = require("path");
 const fs = require("fs");
 const http = require("http");
 
-const DEFAULT_PORT = 3000; // Astro 개발 서버와 동일 — CDN·추천 카드 API CORS 허용 origin
+const DEFAULT_PORT = 3000; // CDN·추천 카드 API 의 CORS 허용 origin 이 localhost:3000 이다
 const EXPECTED_FONT_FAMILIES = ["Pretendard Variable", "NanumMyeongjo"]; // hk_fonts.css 제공 서체
 const FONT_CDN_HOST = "assets.hankookilbo.com";
 const SECTION_SETTLE_MS = 1800; // 챕터 전환 애니메이션(대개 0.8~1.6초)이 끝난 뒤 찍는다
@@ -59,7 +52,7 @@ const MIME = {
 
 function parseArgs() {
   const args = process.argv.slice(2);
-  const out = { entry: "./dist/index.html", out: "./qa-report", port: DEFAULT_PORT, sections: null, anchorMobile: null, anchorDesktop: null };
+  const out = { entry: "./index.html", out: "./qa-report", port: DEFAULT_PORT, sections: null, anchorMobile: null, anchorDesktop: null };
   for (let i = 0; i < args.length; i++) {
     if (args[i] === "--entry") out.entry = args[++i];
     if (args[i] === "--out") out.out = args[++i];
@@ -72,7 +65,7 @@ function parseArgs() {
   return out;
 }
 
-/** dist/ 폴더를 localhost 로 잠깐 서빙하는 최소 정적 서버 */
+/** 프로젝트 폴더를 localhost 로 잠깐 서빙하는 최소 정적 서버 */
 function serveStatic(rootDir, port) {
   const server = http.createServer((req, res) => {
     const urlPath = decodeURIComponent(req.url.split("?")[0]);
@@ -103,13 +96,9 @@ const VIEWPORTS = [
   { name: "desktop", width: 1440, height: 900 },
 ];
 
-/**
- * playwright는 보통 프로젝트 폴더에 설치한다 (`npm install playwright --no-save`).
- * 이 스크립트는 스킬 폴더에 있어서 그냥 require하면 프로젝트의 node_modules를 못 찾는다.
- * 그래서 현재 폴더 → 진입 파일 폴더와 그 상위(프로젝트 루트) → 스킬 폴더 순으로 찾는다.
- */
+/** playwright 는 기기당 한 번 ~/.hk-interactives 에 설치한다. 예전처럼 프로젝트·스킬 폴더에 깔려 있어도 찾는다 */
 function loadPlaywright(entryPath) {
-  const searchPaths = [process.cwd(), path.dirname(entryPath), path.dirname(path.dirname(entryPath)), __dirname];
+  const searchPaths = [path.join(require("os").homedir(), ".hk-interactives"), process.cwd(), path.dirname(entryPath), __dirname];
   try {
     return require(require.resolve("playwright", { paths: searchPaths }));
   } catch (e) {
@@ -124,9 +113,9 @@ async function main() {
   const playwright = loadPlaywright(entryPath);
   if (!playwright) {
     console.error(
-      "playwright가 설치되어 있지 않습니다. 프로젝트 폴더에서 먼저 다음을 실행하세요:\n" +
-      "  npm install playwright --no-save\n" +
-      "  npx playwright install chromium"
+      "playwright가 설치되어 있지 않습니다. 기기당 한 번 다음을 실행하세요:\n" +
+      "  npm install --prefix ~/.hk-interactives playwright\n" +
+      "  npx --prefix ~/.hk-interactives playwright install chromium"
     );
     process.exit(1);
   }
@@ -137,17 +126,22 @@ async function main() {
     process.exit(1);
   }
   const rootDir = path.dirname(entryPath);
-  let server;
-  try {
-    server = await serveStatic(rootDir, port);
-  } catch (e) {
-    console.error(
-      `localhost:${port} 를 열 수 없습니다 (${e.code || e.message}). ` +
-      `Astro 개발 서버(npm run dev)가 켜져 있으면 끄고 다시 실행하세요.`
-    );
+  const url = `http://localhost:${port}/${path.basename(entryPath)}`;
+  // 먼저 그 주소에 이미 뜬 서버가 있는지 본다. 포트 점유 오류만 믿으면 안 된다 — IPv6 로 떠 있는 서버는 IPv4 바인드를 막지 않아서
+  // 엉뚱한 프로젝트의 페이지를 검사하게 된다. 같은 페이지면 그 서버를 쓰고, 다른 페이지면 멈춘다
+  let server = null;
+  const served = await fetch(url, { signal: AbortSignal.timeout(1500) }).then((r) => r.text()).catch(() => null);
+  if (served === null) {
+    server = await serveStatic(rootDir, port).catch((e) => {
+      console.error(`localhost:${port} 를 열 수 없습니다 (${e.code || e.message}).`);
+      process.exit(1);
+    });
+  } else if (served === fs.readFileSync(entryPath, "utf-8")) {
+    console.log(`localhost:${port} 에 이미 떠 있는 이 페이지의 서버를 그대로 씁니다.`);
+  } else {
+    console.error(`localhost:${port} 에 다른 페이지가 떠 있습니다. 그 서버를 끄고 다시 실행하세요.`);
     process.exit(1);
   }
-  const url = `http://localhost:${port}/${path.basename(entryPath)}`;
 
   fs.mkdirSync(out, { recursive: true });
 
@@ -185,12 +179,44 @@ async function main() {
             nid,
             headerMounted: Boolean(header && header.shadowRoot),
             headerIsFirstInBody: Boolean(header && document.body.firstElementChild === header),
-            // 공통영역 API (references/common-area.md) — <html data-*> 초기값
-            html: ["flow", "view", "state", "gnb", "theme"].reduce((o, k) => ((o[k] = document.documentElement.dataset[k] ?? null), o), {}),
+            // 공통영역 API (references/common-area.md) — <html data-*> 초기값. theme 은 공통 JS 블록이 배경색으로 쓴 값
+            html: ["state", "gnb", "theme"].reduce((o, k) => ((o[k] = document.documentElement.dataset[k] ?? null), o), {}),
             recommendMounted: Boolean(document.querySelector("interactive-recommend")),
+            ...layoutAtLoad(header),
           };
+          // 첫 요소는 GNB 아래에서 시작하고(.body-wrapper 위 여백 = GNB 높이), 그 자리 뒤에는 단색 배경만 있어야 한다
+          function layoutAtLoad(header) {
+            const bw = document.querySelector(".body-wrapper");
+            const gnbH = header?.shadowRoot?.querySelector("header")?.getBoundingClientRect().height ?? null;
+            const under = gnbH ? document.elementsFromPoint(innerWidth / 2, gnbH / 2).find((el) => el !== header) : null;
+            return {
+              creditsMode: document.documentElement.dataset.credits === "end" ? "end" : "bottom",
+              scrollable: bw ? bw.scrollHeight > bw.clientHeight : null,
+              gnbH,
+              wrapperPadTop: bw ? parseFloat(getComputedStyle(bw).paddingTop) : null,
+              underGnb: under ? under.tagName.toLowerCase() + (under.className && typeof under.className === "string" ? "." + under.className.split(" ")[0] : "") : null,
+              underGnbOk: !under || under === bw || under === document.body || under === document.documentElement,
+              bgImages: [bw, document.body, document.documentElement].filter((el) => el && getComputedStyle(el).backgroundImage !== "none").map((el) => el.tagName.toLowerCase() + (el === bw ? ".body-wrapper" : "")),
+            };
+          }
         })
         .catch((e) => ({ error: e.message }));
+
+      // GNB 스크롤 규칙 (references/common-area.md): 맨 위 벗어나면 바로 hidden → 더 내리면 hidden → 올리면 solid → 맨 위 transparent
+      if (report.embed.scrollable) {
+        report.embed.gnbSteps = await page
+          .evaluate(async () => {
+            const bw = document.querySelector(".body-wrapper");
+            const steps = [];
+            for (const y of [15, 400, 300, 0]) {
+              bw.scrollTop = y;
+              await new Promise((r) => setTimeout(r, 150));
+              steps.push(`${y}:${document.documentElement.dataset.gnb}`);
+            }
+            return steps;
+          })
+          .catch(() => null);
+      }
     }
 
     // 웹폰트 로드 확인 (첫 뷰포트에서 한 번만). CDN CORS 문제면 여기서 바로 드러난다.
@@ -277,7 +303,7 @@ async function main() {
       });
     }).catch(() => {});
 
-    // 스크롤형: 끝에 닿았으니 wireScrollFlow 가 credits 로 바꿨어야 하고 추천 카드가 떠 있어야 한다 (첫 뷰포트에서 한 번만)
+    // 끝에 닿았으니 data-credits="bottom" 이면 credits·solid + 추천 카드, "end" 면 아직 credits 가 아니어야 한다 (첫 뷰포트에서 한 번만)
     if (report.embed && !report.embed.error && report.embed.creditsReached === undefined) {
       await page.waitForTimeout(1500);
       Object.assign(
@@ -312,7 +338,7 @@ async function main() {
   }
 
   await browser.close();
-  server.close();
+  server?.close();
 
   fs.writeFileSync(path.join(out, "report.json"), JSON.stringify(report, null, 2));
 
@@ -328,7 +354,7 @@ async function main() {
       const note = f.loaded
         ? "로드됨"
         : !f.declared
-          ? "선언 없음 — Layout.astro에 hk_fonts.css 링크가 있는지 확인"
+          ? "선언 없음 — <head> 에 hk_fonts.css 링크가 있는지 확인"
           : f.error
             ? "로드 실패 — CDN CORS 허용 목록(localhost:3000) 문제일 가능성. 프론트개발팀 확인"
             : "미사용 — 이 서체를 쓰는 요소가 첫 화면에 없음 (정상일 수 있음)";
@@ -343,9 +369,9 @@ async function main() {
     const e = report.embed;
     console.log("\n인터랙티브 임베드 (interactive-embed.js):");
     if (!e.scriptPresent) {
-      console.log("  ✕ 스크립트 없음 — Layout.astro <head>에 interactive-embed.js?Nid=${ARTICLE_KEY} 가 있어야 합니다.");
+      console.log("  ✕ 스크립트 없음 — <head> 에 interactive-embed.js?Nid=<기사키> 가 있어야 합니다.");
     } else {
-      console.log(`  ${e.nid ? "✓" : "✕"} Nid=${e.nid || "(없음 — 대문자 N으로 ?Nid=${ARTICLE_KEY} 붙이기)"}`);
+      console.log(`  ${e.nid ? "✓" : "✕"} Nid=${e.nid || "(없음 — 대문자 N으로 ?Nid=<기사키> 붙이기)"}`);
       const headerFetchFailed = report.failedRequests.some((r) => r.url.includes("interactive-header.html"));
       console.log(
         `  ${e.headerMounted ? "✓" : "✕"} 헤더 <interactive-header>: ${
@@ -357,20 +383,25 @@ async function main() {
         }`
       );
       const h = e.html || {};
-      const declared = ["flow", "view", "state", "gnb", "theme"].filter((k) => h[k]);
-      console.log(
-        `  ${declared.length === 5 ? "✓" : "✕"} 공통영역 API <html data-*>: ${
-          declared.length === 5
-            ? Object.entries(h).map(([k, v]) => `${k}=${v}`).join(" ")
-            : `누락 ${["flow", "view", "state", "gnb", "theme"].filter((k) => !h[k]).join(", ")} — Layout.astro <html> 에 선언 (assets/template/src/layouts/Layout.astro)`
-        }`
-      );
+      const initOk = h.state === "intro" && h.gnb === "transparent" && ["light", "dark"].includes(h.theme);
+      console.log(`  ${initOk ? "✓" : "✕"} 공통영역 API <html data-*>: state=${h.state} gnb=${h.gnb} theme=${h.theme}${initOk ? "" : " — <html> 의 data-state·data-gnb 선언과 hk-common-js 블록 확인 (assets/template/index.html)"}`);
+      const padOk = e.gnbH != null && Math.abs(e.wrapperPadTop - e.gnbH) < 1;
+      console.log(`  ${padOk ? "✓" : "✕"} 첫 요소 GNB 아래 시작: .body-wrapper 위 여백 ${e.wrapperPadTop}px / GNB ${e.gnbH}px${padOk ? "" : " — hk-common-css 블록의 --gnb-h·.body-wrapper padding 확인"}`);
+      console.log(`  ${e.underGnbOk ? "✓" : "✕"} 로드 직후 GNB 뒤: ${e.underGnb}${e.underGnbOk ? "" : " — GNB 영역을 덮는 fixed 레이어가 있습니다. top: var(--gnb-h) 부터 시작하게 하세요"}`);
+      console.log(`  ${e.bgImages?.length ? "✕" : "✓"} 배경 단색 (.body-wrapper·body·html)${e.bgImages?.length ? `: ${e.bgImages.join(", ")} 에 배경 이미지·그라데이션 — 아이콘 색 자동 판정이 틀립니다. 안쪽 요소로 옮기세요` : ""}`);
+      if (e.gnbSteps) {
+        const want = ["15:hidden", "400:hidden", "300:solid", "0:transparent"];
+        const ok = want.every((w, i) => e.gnbSteps[i] === w);
+        console.log(`  ${ok ? "✓" : "✕"} GNB 스크롤 규칙: ${e.gnbSteps.join(" → ")}${ok ? "" : ` (기대: ${want.join(" → ")})`}`);
+      } else if (e.scrollable === false) {
+        console.log("  - 스크롤 없는 페이지: GNB 는 크레딧 전까지 투명 고정");
+      }
       console.log(`  ${e.recommendMounted ? "✓" : "-"} 추천 카드 <interactive-recommend>: ${e.recommendMounted ? "마운트됨 (data-state=\"credits\" 에서 표시)" : "없음 (Nid 없음 또는 data-recommend=\"false\")"}`);
-      if (h.flow === "scroll" && e.creditsReached !== undefined) {
-        console.log(`  ${e.creditsReached ? "✓" : "✕"} 스크롤형 끝: data-state=${e.creditsReached ? "credits" : `${document_state(e)} — wireScrollFlow() 가 Layout 에서 호출되는지, 바이라인(.byline)이 있는지 확인`} / gnb=${e.endGnb}`);
-        console.log(`  ${e.recommendVisible ? "✓" : "✕"} 스크롤형 끝: 추천 카드 ${e.recommendVisible ? "표시됨" : "안 보임 (후보 없음·API 실패·credits 미진입)"}`);
-      } else if (h.flow === "game") {
-        console.log("  - 게임형: 진행 화면 로고 버튼·끝 화면 추천 카드는 자동 확인 불가 — 담당자 확인 항목 (references/template-overview.md QA 체크리스트)");
+      if (e.creditsMode === "bottom" && e.creditsReached !== undefined) {
+        console.log(`  ${e.creditsReached && e.endGnb === "solid" ? "✓" : "✕"} 끝까지 스크롤: data-state=${e.creditsReached ? "credits" : "credits 아님 — hk-common-js 블록과 바이라인(.byline) 확인"} / gnb=${e.endGnb} (기대 solid)`);
+        console.log(`  ${e.recommendVisible ? "✓" : "✕"} 끝까지 스크롤: 추천 카드 ${e.recommendVisible ? "표시됨" : "안 보임 (후보 없음·API 실패·credits 미진입)"}`);
+      } else if (e.creditsMode === "end") {
+        console.log(`  ${e.creditsReached ? "✕" : "✓"} data-credits="end": 끝까지 스크롤해도 크레딧이 ${e.creditsReached ? "떴습니다 — 바이라인 감지가 켜져 있습니다" : "뜨지 않음"}. 마지막 화면의 showCredits(target) 는 담당자 확인 항목`);
       }
     }
   }
@@ -382,10 +413,6 @@ async function main() {
     console.log("\n실패한 네트워크 요청:");
     report.failedRequests.forEach((r) => console.log(`  - [${r.viewport}] ${r.url} (${r.failure || ""})`));
   }
-}
-
-function document_state(e) {
-  return e.creditsReached ? "credits" : "credits 아님";
 }
 
 main();
