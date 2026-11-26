@@ -194,7 +194,7 @@ if (!fs.existsSync(indexPath)) {
   check("폰트 파일 없음 (웹폰트는 CDN hk_fonts.css 만)", fontFiles.length ? "fail" : "pass",
     fontFiles.length ? `발견: ${fontFiles.slice(0, 5).map((p) => path.relative(rootDir, p)).join(", ")} — 지우고 CDN 서체(var(--font-base)/var(--font-serif))를 쓰세요.` : "");
   const fontFace = /@font-face/.test(ownCode);
-  check("@font-face 직접 선언 없음", fontFace ? "fail" : "pass", fontFace ? "서체 추가는 프론트개발팀에 hk_fonts.css 반영을 요청하세요." : "");
+  check("@font-face 직접 선언 없음", fontFace ? "fail" : "pass", fontFace ? "CDN 2종만 씁니다. 다른 서체가 꼭 필요하면 그 글자를 이미지로 넣으세요." : "");
 
   // 6. 용량 — 올리는 파일만 (brief.md·qa-report 제외)
   const sizeMB = files.reduce((sum, f) => sum + fs.statSync(f).size, 0) / (1024 * 1024);

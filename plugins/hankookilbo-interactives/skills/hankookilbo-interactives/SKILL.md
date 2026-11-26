@@ -30,8 +30,8 @@ description: 한국일보 인터랙티브 기사 페이지(스크롤 여정형, 
   3. 올리는 파일 전체 용량 상한 (권장 10MB / 스킬 상한 80MB)
   4. 폰트는 한국일보 CDN(`https://assets.hankookilbo.com/fonts/hk_fonts.css`)의 2종만 사용 —
      `var(--font-base)`(`'Pretendard Variable'`, 가변 45~920) / `var(--font-serif)`(`'NanumMyeongjo'`, 400/700/800).
-     폰트 파일을 프로젝트에 두거나 `@font-face`를 직접 선언하지 않는다(`self_check.js` 실패). 다른 서체가 필요하면
-     한국일보 프론트개발팀에 `hk_fonts.css` 추가를 요청한다 (`references/theming.md`)
+     폰트 파일을 프로젝트에 두거나 `@font-face`를 직접 선언하지 않는다(`self_check.js` 실패). 다른 서체가 꼭 필요하면
+     그 글자를 이미지로 만들어 넣는 것을 권한다 (`references/theming.md`)
   5. 사진·영상 등 모든 소재는 사용 권한이 확인된 것만 쓰고, 화면에 출처(크레딧)를 표기
   6. 공유 이미지 2장 필수 — `index.html` 옆에 `share.jpg` **1200×630**(페이스북·X),
      `share_kakao.jpg` **800×800**(카카오톡), 둘 다 JPG. `self_check.js`가 파일 존재와
