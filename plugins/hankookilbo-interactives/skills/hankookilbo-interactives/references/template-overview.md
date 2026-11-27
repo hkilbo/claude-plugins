@@ -91,8 +91,8 @@ mkdir <폴더명> && cp <스킬폴더>/assets/template/index.html <폴더명>/
 | 구분 | 내용 | 식별자 |
 | --- | --- | --- |
 | Google Analytics (GA4) | gtag.js 1종. 개편 전 스트림(GTM `GTM-59599H7`, UA `UA-53476308-*`, GA4 `G-ZPZ8BHZPSJ`·`G-BZHTEE2B8L`)은 넣지 않는다 | `G-HR08PM6YWZ` |
-| jQuery | `hkAnalTag_hub.js`가 `$`를 쓴다. **통계 스크립트보다 앞에** 로드한다 (뒤에 두면 `$ is not defined`로 Hmap 수집이 안 된다) | `https://www.hankookilbo.com/Inc/Js/jquery-3.4.1.min.js` |
-| 한국일보 통계 (Hmap 1.0) | `hkAnalTag_hub.js` — www 절대 경로, jQuery 다음. `hkFunc.js`는 쓰지 않는다 | `https://www.hankookilbo.com/Inc/Js/hkAnalTag_hub.js` |
+| jQuery | `hkAnalTag_hub.js`가 `$`를 쓴다. **통계 스크립트보다 앞에** 로드한다 (뒤에 두면 `$ is not defined`로 Hmap 수집이 안 된다) | `https://www.hankookilbo.com/interactive/lib/js/jquery-3.4.1.min.js` |
+| 한국일보 통계 (Hmap 1.0) | `hkAnalTag_hub.js` — jQuery 다음. `hkFunc.js`는 쓰지 않는다 | `https://www.hankookilbo.com/interactive/lib/js/hkAnalTag_hub.js` |
 | 한국일보 통계 메타 | `hk:nw_newsid`, `hk:nw_press`, `hk:nw_presscode`, `hk:nw_title`, `hk:nw_pagecode` | 2장 표의 기사 키·제목 |
 | 인터랙티브 임베드 v2 (헤더 웹컴포넌트 + 추천 카드) | `interactive-embed.js?Nid=<기사 키>` — 사내 CDN, `Nid`는 대문자 N. 동작은 `<html data-*>`로 정한다 (`common-area.md`) | `https://assets.hankookilbo.com/components/interactive-embed/v2/interactive-embed.js` |
 | 카카오 SDK **v2** | `t1.kakaocdn.net/kakao_js_sdk/2.7.6/kakao.min.js` + `Kakao.init(...)` (초기화 여부 확인 후) | 앱키 `e62df5186f0758def8f14c53e64d7b9d`. 인터랙티브 헤더가 같은 v2를 쓴다. v1(`developers.kakao.com/sdk/js/kakao.min.js`) 금지 |

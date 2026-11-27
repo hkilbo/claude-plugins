@@ -17,8 +17,8 @@ const WC_CDN_HOST = "assets.hankookilbo.com";
 
 const REQUIRED_KEYS = [
   "G-HR08PM6YWZ", // GA4 — 이 스트림 하나 (개편 전 GTM/UA/다른 G-* 금지)
-  "www.hankookilbo.com/Inc/Js/jquery-3.4.1.min.js", // hkAnalTag_hub.js 가 $ 를 쓴다 — 통계 스크립트보다 앞
-  "www.hankookilbo.com/Inc/Js/hkAnalTag_hub.js", // 한국일보 통계 (Hmap 1.0), www 절대 경로
+  "interactive/lib/js/jquery-3.4.1.min.js", // hkAnalTag_hub.js 가 $ 를 쓴다 — 통계 스크립트보다 앞
+  "interactive/lib/js/hkAnalTag_hub.js", // 한국일보 통계 (Hmap 1.0)
   "components/interactive-embed/v2/interactive-embed.js?Nid=", // 임베드 v2 (Nid 대문자 N)
   "assets.hankookilbo.com/fonts/hk_fonts.css", // 웹폰트 CDN
   "t1.kakaocdn.net/kakao_js_sdk/2.7.6/kakao.min.js", // 카카오 SDK v2 (헤더와 같은 버전)
@@ -107,7 +107,7 @@ if (!fs.existsSync(indexPath)) {
     kakaoV1Api ? "Kakao.Link 호출이 있습니다. 바이라인에는 카카오 공유를 두지 않습니다 — 헤더가 맡습니다 (references/byline-and-share.md)." : "");
   const legacy = [...new Set(noComments.match(/GTM-59599H7|UA-53476308-\d|G-ZPZ8BHZPSJ|G-BZHTEE2B8L|hkFunc\.js/g) || [])];
   check("개편 전 통계 스크립트 없음 (GA4는 G-HR08PM6YWZ 하나)", legacy.length ? "fail" : "pass", legacy.length ? `개편 전 식별자: ${legacy.join(", ")} — 지우세요.` : "");
-  const [jqAt, hubAt] = ["Inc/Js/jquery-3.4.1.min.js", "Inc/Js/hkAnalTag_hub.js"].map((k) => html.indexOf(k));
+  const [jqAt, hubAt] = ["interactive/lib/js/jquery-3.4.1.min.js", "interactive/lib/js/hkAnalTag_hub.js"].map((k) => html.indexOf(k));
   if (jqAt >= 0 && hubAt >= 0) check("jQuery 가 통계 스크립트(hkAnalTag_hub.js)보다 앞", jqAt < hubAt ? "pass" : "fail",
     jqAt < hubAt ? "" : "hkAnalTag_hub.js 가 jQuery 보다 먼저 실행됩니다. jquery <script> 를 앞으로 옮기세요.");
   const ownHeader = /class="article-bar"/.test(html);
