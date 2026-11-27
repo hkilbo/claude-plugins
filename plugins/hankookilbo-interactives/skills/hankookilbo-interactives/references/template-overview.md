@@ -2,7 +2,7 @@
 
 > 한국일보 인터랙티브 템플릿은 **파일 하나**(`assets/template/index.html`)다. 설치도 빌드도 없다. 새 인터랙티브를 시작할 때 이 문서를 먼저 읽는다.
 > 코드는 전부 그 파일에 있다. 이 문서는 "무엇을 어디에, 왜"만 적는다.
-> 올리는 곳: S3 `v/<폴더명>/` → 페이지 주소 `https://www.hankookilbo.com/interactive/<폴더명>/`
+> 올리는 곳: S3 `articles/<폴더명>/` → 페이지 주소 `https://www.hankookilbo.com/interactive/<폴더명>/`
 
 ## 목차
 
@@ -226,7 +226,7 @@ AI가 반드시 지켜야 한다.
 
 1. `self_check.js`가 모두 통과하는지 확인한다.
 2. 프로젝트 폴더의 바로 위에서 zip을 만든다. `brief.md`·`qa-report/`·`.git/`·`node_modules/`·`.DS_Store`는 넣지 않는다. zip 안에는 `<폴더명>/` 폴더 하나와 올릴 파일만 있다.
-3. 올릴 때: zip을 풀어 나온 `<폴더명>` 폴더를 AWS 콘솔에서 S3 버킷의 `v/` 아래에 그대로 올린다. 결과 경로는 `v/<폴더명>/index.html`이다.
+3. 올릴 때: zip을 풀어 나온 `<폴더명>` 폴더를 AWS 콘솔에서 S3 버킷의 `articles/` 아래에 그대로 올린다. 결과 경로는 `articles/<폴더명>/index.html`이다.
 4. 업로드할 때 Cache-Control을 `no-cache, must-revalidate`로 지정하면 수정본이 바로 반영된다.
 
 ## 7. 올리기 전 확인

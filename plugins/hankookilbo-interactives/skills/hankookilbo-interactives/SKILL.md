@@ -243,7 +243,7 @@ npx --prefix ~/.hk-interactives playwright install chromium
    +본문 이미지·`data/`·따로 둔 `.css`·`.js`). 프로젝트 폴더 이름이 6번 폴더명과 같아야 주소가 맞습니다.
    만든 뒤 `unzip -l <폴더명>.zip`으로 목록을 확인합니다.
 3. **안내**: zip 파일의 위치를 알려 주고 이렇게 말합니다 — "이 zip을 풀면 `<폴더명>` 폴더가 나옵니다. 그 폴더를 S3 버킷의
-   `v/` 아래에 그대로 올리면 `https://www.hankookilbo.com/interactive/<폴더명>/` 에서 열립니다." 올리는 방법은
+   `articles/` 아래에 그대로 올리면 `https://www.hankookilbo.com/interactive/<폴더명>/` 에서 열립니다." 올리는 방법은
    `references/template-overview.md` 「올리기」에 있습니다.
 
 완료 문서를 따로 쓰지 않습니다. 올리는 사람이 알아야 할 특이사항(외부 API 키, 구글시트 연동 등)은 `brief.md`에 남기고,
