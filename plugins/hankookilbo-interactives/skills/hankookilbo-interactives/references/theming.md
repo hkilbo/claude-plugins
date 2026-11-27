@@ -1,55 +1,45 @@
-# 테마 · 변수 · 폰트 · 스타일 규칙
+# 테마 · CSS 변수 · 폰트 · 스타일 규칙
 
-> 색을 바꾸거나(라이트/다크), 폰트 크기·브레이크포인트 변수를 쓰거나, 새 스타일 파일을 만들 때 읽는다.
-> 코드: `assets/template/src/styles/` (`style.sass`, `_variables.sass`, `_utils.sass`, `_full_loader.sass`, `_byline.scss`).
+> 페이지 배경색을 바꾸거나, 글자 크기 변수·모바일 분기를 쓰거나, 스타일을 쓸 때 읽는다.
+> 코드: `assets/template/index.html`의 `hk-common-css` 블록(변수 기본값, 고치지 않는다)과 그 아래 "프로젝트 스타일" `<style>`(덮어쓰는 곳).
 
-## 테마는 `META.ts`의 `THEME` 하나로 정한다
+## 헤더 아이콘 색은 배경색으로 자동으로 정해진다
 
-| 페이지 배경 | `META.ts` | Layout이 만드는 `<html>` | `_variables.sass` | 헤더·추천 카드 |
-| --- | --- | --- | --- | --- |
-| 어두움 (템플릿 기본) | `THEME = "dark"` | `class="dark" data-theme="dark"` | `$bgBase: #111`, `$fontColBase: #fff` | 흰 로고·아이콘, 어두운 카드 |
-| 밝음 | `THEME = "light"` | `data-theme="light"` (class 없음) | `$bgBase` 밝은 색, `$fontColBase` 어두운 색 | 검은 로고·아이콘, 흰 카드 |
+제작자가 라이트/다크를 고르지 않는다. 공통 블록이 GNB 뒤 배경색의 밝기를 재서 `<html data-theme>`을 쓰고, 같은 색을 `<meta name="theme-color">`에 쓴다(`common-area.md`). 배경색은 `.body-wrapper` → `body` → `html` 순서로 읽고, 반투명이면 뒤 요소의 색과 섞는다.
 
-- 셋(`THEME`, `class="dark"`, `$bgBase` 밝기)이 어긋나면 헤더 로고가 배경과 같은 색이 돼 안 보인다. `self_check.js`가 fail 처리한다.
-- `class="dark"`는 구 CDN 호환용으로 `data-theme`과 함께 둔다. 직접 쓰지 말고 `THEME`에서 나오게 둔다.
-- 라이트와 다크 중 하나로 고정한다. 페이지 안에서 바꾸는 전환 기능은 만들지 않는다. 유일한 예외는 모바일뷰·게임형의 PC(`patterns.md` 패턴 F, `syncOuterTheme`).
-- `dark` 이외의 이름(`theme-dark` 등)이나 `<body>`에 붙인 클래스는 헤더가 읽지 않는다.
+| 페이지 배경 `--bg-base` | `data-theme` | 헤더·추천 카드 |
+| --- | --- | --- |
+| 어두움 (템플릿 기본 `#111`, `--font-col-base: #fff`) | `dark` | 흰 로고·아이콘, 어두운 카드 |
+| 밝음 (`--font-col-base`는 어두운 색으로) | `light` | 검은 로고·아이콘, 흰 카드 |
 
-## `style.sass` (진입점)
+- 기준은 WCAG 상대 휘도 0.179다. 그보다 밝으면 `light`(검정 아이콘).
+- `.body-wrapper`·`body`·`html` 배경은 **단색만** 쓴다. 템플릿은 `body`와 `.body-wrapper`를 `--bg-base`로 칠한다. 이미지·그라데이션은 `.body-wrapper` 안의 요소에 둔다. `self_check.js`가 `--bg-base` 값과 이 세 요소의 배경 선언을 검사하고, `qa_playwright.js`가 실제 계산값을 한 번 더 본다.
+- 로드 직후 GNB 영역을 덮는 `position: fixed` 레이어 규칙은 `common-area.md` 「API — `<html data-*>`」.
+- 실행 중에 배경색을 바꿔도 된다(예: 챕터마다 밝기 전환). 이 세 요소의 `class`나 `style`로 바꾸면 GNB 아이콘 색이 따라간다. 배경 transition이 끝날 때도 다시 판정한다.
+- `data-theme`이나 `dark` 클래스를 직접 쓰지 않는다. `<body>`에 붙인 테마 클래스는 헤더가 읽지 않는다.
 
-`@use 'base'` → `@use 'full_loader'` → `@use 'byline'` → 프로젝트 스타일 `@use`. 적은 순서대로 CSS가 나오므로 리셋(`_base.sass`)이 항상 먼저다. `_base.sass`에 reset, `html, body { overflow: hidden }`, `.body-wrapper`(실제 스크롤 컨테이너, `position: fixed`), `.hidden`(시각적 숨김) 유틸이 있다. `.body-wrapper` 구조를 바꾸지 않는다.
+## CSS 변수
 
-Sass `@import`는 쓰지 않는다 — Dart Sass 1.80+가 폐기 경고를 찍고 3.0에서 사라진다. `@use`는 파일 맨 위에만 올 수 있다.
-
-## `_variables.sass`
+기본값은 `hk-common-css` 블록의 `:root`에 있다.
 
 | 변수 | 값 / 용도 |
 | --- | --- |
-| `$wrapper-width` | 900px |
-| `$fontBase`, `$fontSerif` | `'Pretendard Variable'…`, `'NanumMyeongjo'`. 서체 이름은 여기서만 |
-| `$font12` … `$font38` | PC 기준 이름, 모바일에서 `clamp()`로 축소. `px` 직접 지정은 14px 이하 캡션에만 |
-| `$bgBase`, `$bgBaseBlur`, `$fontColBase` | 배경·반투명 배경·글자색. `THEME`과 맞춘다 |
-| `$z-gnb` 100, `$z-main` 10, `$z-layer` 200 | z-index |
-| `$easing` | `cubic-bezier(0.17, 0.67, 0.21, 1)` |
-| `$mobile-width` 800, `$tablet-limit` 1200, `$tablet-width` 1440 | 브레이크포인트. `768px` 같은 임의 값을 새로 만들지 않는다 |
+| `--bg-base`, `--font-col-base` | 페이지 배경색·글자색. 기본 `#111` / `#fff`. `--bg-base`는 단색만 — 헤더 아이콘 색을 이 밝기로 자동 판정한다 |
+| `--font-base`, `--font-serif` | 고딕(`'Pretendard Variable'…`) / 명조(`'NanumMyeongjo'`). 서체 이름은 직접 쓰지 않는다 |
+| `--font-14` `--font-16` `--font-18` `--font-20` `--font-26` `--font-32` `--font-38` | 글자 크기. PC 기준 이름이고 좁은 화면에서 `clamp()`로 줄어든다 |
+| `--easing` | `cubic-bezier(0.17, 0.67, 0.21, 1)` |
+| `--gnb-h` | GNB 높이. 64px, 1280px 이상 76px |
+| `--screen-h` | GNB 아래 한 화면 (`100dvh - var(--gnb-h)`). 높이 규칙은 `structure.md` 「지켜야 하는 것」 |
+| `--sticky-top` | 화면 맨 위에 붙이는 sticky 요소의 `top` |
 
-## `_utils.sass` 믹스인·함수
+- **바꾸는 법**: 블록 안의 값을 고치지 않는다. "프로젝트 스타일" `<style>`의 `:root`에서 같은 이름으로 덮어쓴다. 템플릿에 `--bg-base`·`--font-col-base` 두 줄이 예시로 들어 있다.
+- 프로젝트 전용 값(본문 폭, 강조색 등)도 같은 `:root`에 변수로 둔다. 예: `--story-box-max-width: 640px`.
+- `--gnb-h`·`--screen-h`·`--sticky-top`은 덮어쓰지 않는다. 헤더 높이와 맞춘 값이다.
+- 모바일 분기는 `@media (max-width:800px)` 하나만 쓴다(공통 블록에는 없으므로 프로젝트 스타일에 직접 쓴다). `768px` 같은 임의 값을 새로 만들지 않는다.
 
-`@include mobile`(~800px), `@include tablet`(801~1440), `@include tablet-limit`(801~1200), `@include clear`, `rem()`, `em()`, `rem-ratio()`.
+## 웹폰트 — 사내 CDN
 
-```scss
-.section {
-  padding: 80px 0;
-  font-size: $font18;
-  @include mobile { padding: 40px 20px; }
-}
-```
-
-## 웹폰트 — 사내 CDN (`_fonts.scss` 없음)
-
-폰트 파일을 저장소나 `public/fonts/`에 두지 않는다 (**예외: 아이콘 폰트 `public/addon/icon_font/`** ). `Layout.astro` `<head>`에서
-사내 CDN의 `https://assets.hankookilbo.com/fonts/hk_fonts.css`를 링크하면 아래
-서체가 제공된다 (`Layout.astro`).
+폰트 파일을 프로젝트에 두지 않는다. 템플릿 `<head>`가 사내 CDN의 `https://assets.hankookilbo.com/fonts/hk_fonts.css`를 링크하고, 아래 서체가 제공된다.
 
 | CSS `font-family` 값    | 굵기            | 비고                                         |
 | ----------------------- | --------------- | -------------------------------------------- |
@@ -57,30 +47,22 @@ Sass `@import`는 쓰지 않는다 — Dart Sass 1.80+가 폐기 경고를 찍�
 | `'NanumMyeongjo'`       | 400 / 700 / 800 | woff2                                        |
 
 `hk_fonts.css`에는 `font-display: swap`이 걸려 있다. 폰트가 늦게 오면 기본 서체로
-먼저 그려졌다가 바뀌는데, Layout의 로더가 `document.fonts.ready`까지 기다렸다가
+먼저 그려졌다가 바뀌는데, 로딩 화면이 웹폰트가 준비될 때까지 기다렸다가
 걷히므로 사용자 눈에는 보이지 않는다.
 
-스타일에서는 서체 이름을 직접 쓰지 말고 `_variables.sass`의 `$fontBase`,
-`$fontSerif`를 쓴다. `NotoSerifKR`, `NanumSquareNeo` 등 CDN에 없는 서체는 쓰지
-않는다. 새 서체가 필요하면 `hk_fonts.css`에 추가해 달라고 프론트개발팀에 요청한다
-(`@font-face`를 프로젝트에 직접 선언하지 않는다).
+`NotoSerifKR`, `NanumSquareNeo` 등 CDN에 없는 서체는 쓰지 않는다 (`@font-face`를 프로젝트에 직접 선언하지 않는다).
+다른 서체가 꼭 필요하면 그 글자를 이미지로 만들어 넣는 것을 권한다. 제목처럼 짧은 글자에 쓰고, 이미지의 `alt`에 같은 글자를 적는다.
 
-로컬 확인: 개발 서버(`localhost:3000`)와 배포 도메인(`interactive.hankookilbo.com`)이
+로컬 확인: 로컬 서버(`localhost:3000`)와 서비스 도메인(`www.hankookilbo.com`)이
 CDN의 CORS 허용 목록에 있어야 폰트가 뜬다. 기본 서체로만 보이고 콘솔에 CORS
 에러가 있으면 코드 문제가 아니라 CDN 허용 목록 문제이므로 프론트개발팀에 문의한다.
 
+## 로딩 화면
 
-## `_full_loader.sass`
-
-초기 로딩 화면. `body.loading`일 때 `.full-loader`가 `z-index: 3000`으로 덮고, 로더가 걷히면(`body.loaded`) 사라진다. 끝에 `body.loading interactive-header { opacity: 0 !important; pointer-events: none !important }`가 있다 — 헤더를 건드리는 유일한 예외다(`common-area.md`). `visibility`가 아니라 `opacity`를 쓰는 이유: 헤더 shadow DOM 안 `<header>`가 `visibility: visible`을 직접 가져 자식이 다시 보이지만 `opacity`는 자식이 뒤집을 수 없다. `!important`는 헤더 `:host`의 `wc-reveal` 애니메이션보다 우선하기 위해 필요하다.
+`hk-common-css` 블록의 `.full-loader` 규칙이다. `body.loading`일 때 `.full-loader`가 화면을 덮고 한국일보 공통 로더(회색 원 + 도는 초록 호)가 돈다. 이미지 두 장은 파일이 아니라 데이터로 블록 안에 들어 있다. 배경은 `#282828` 고정이다. 페이지 리소스와 웹폰트가 준비되면 공통 블록이 걷는다(`body.loaded`). 로딩 중에는 헤더도 가린다 — 헤더를 건드리는 유일한 예외이고 이유는 `common-area.md`에 있다.
 
 ## 스타일 규칙
 
-- `.sass`(들여쓰기)와 `.scss`(중괄호)를 혼용한다. 기존 파일 문법을 따르고, 새 파일은 `.scss`로 만든다.
-- 컴포넌트 스타일은 컴포넌트 파일에서 `import "../styles/xxx.scss"`로 가져오거나 `style.sass`에 `@use` 한다. 두 방식을 한 파일에 섞지 않는다.
-- 변수, 믹스인을 쓰는 `.scss`/`.sass`는 파일 맨 위에 `@use "variables" as *; @use "utils" as *;`를 둔다. `@use`는 파일마다 따로 필요하다(`style.sass`가 불러도 다른 파일로 전파되지 않는다).
-- 폰트 크기는 `$font16` 같은 변수를 쓴다. `px` 직접 지정은 14px 이하의 캡션에만 허용한다.
-- 매직 넘버는 변수로 뺀다. 예: `$story-box-max-width: 640px`.
-- 테마는 `META.ts`의 `THEME` 하나로 정한다. Layout이 `<html data-theme>`와 `class="dark"`를 만든다. 둘 중 하나로 고정하고 전환 기능은 만들지 않는다 (`common-area.md`). 예외는 `patterns.md` 패턴 F 게임형의 PC(`syncOuterTheme`)뿐이다.
-
-
+- 글자 크기는 `var(--font-16)` 같은 변수를 쓴다. `px` 직접 지정은 14px 이하의 캡션에만 허용한다.
+- 반복해서 쓰는 숫자는 프로젝트 `:root` 변수로 뺀다.
+- 바이라인·로딩 화면처럼 공통 블록에 있는 스타일을 바꾸려면 블록을 고치지 말고 "프로젝트 스타일"에서 같은 선택자로 덮어쓴다.
